@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="TCS.png" type="image/png">
     <title>陣取り合戦シミュレータ - バージョン選択ハブ</title>
     <style>
         body {
@@ -132,14 +133,20 @@
             background-color: rgba(255, 140, 0, 0.4); /* さらに濃いオレンジ */
             transform: translateY(0); /* アクティブ時は元の位置に戻す */
         }
-
+        .large-icon {
+            width: 120px; /* アイコンの幅 */
+            height: 120px; /* アイコンの高さ */
+            object-fit: cover; /* 画像を枠にフィット */
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); /* 影を追加 */
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>陣取り合戦シミュレータ</h1>
-
+        <img src="TCS.png" alt="TCSアイコン" class="large-icon">
         <!-- おすすめバージョン -->
         <h4>おすすめのバージョン（最新版で安定！）</h4>
         <a href="map-v1.0.3.2/index.html" target="_blank" class="super-link">1.0.3.2</a>
