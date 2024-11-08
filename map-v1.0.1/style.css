@@ -1,0 +1,44 @@
+/* 基本スタイル */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* ページがスクロールしないようにする */
+}
+
+#container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+/* サイドバー */
+#sidebar {
+    width: 300px;
+    background-color: #f4f4f4;
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    flex-shrink: 0; /* サイドバーの幅を固定 */
+}
+
+#sidebar h2, #sidebar h3 {
+    margin-top: 0;
+}
+
+#sidebar button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+/* キャンバスエリア */
+canvas {
+    flex-grow: 1; /* キャンバスが余ったスペースを埋める */
+    border: 1px solid black;
+    width: calc(100% - 300px); /* サイドバー分を引いた幅にする */
+    height: 100%;
+}

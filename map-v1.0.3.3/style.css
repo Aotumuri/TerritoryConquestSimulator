@@ -1,0 +1,129 @@
+/* 基本スタイル */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* ページがスクロールしないようにする */
+}
+
+#container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+/* サイドバー */
+#sidebar {
+    width: 300px;
+    background-color: #f4f4f4;
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    flex-shrink: 0; /* サイドバーの幅を固定 */
+}
+
+#sidebar h2, #sidebar h3 {
+    margin-top: 0;
+}
+
+#sidebar button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+/* キャンバスエリア */
+canvas {
+    flex-grow: 1; /* キャンバスが余ったスペースを埋める */
+    border: 1px solid black;
+    width: calc(100% - 300px); /* サイドバー分を引いた幅にする */
+    height: 100%;
+}
+/* バージョン表示のスタイル */
+#versionLabel {
+    position: fixed; /* 画面に固定 */
+    bottom: 20px; /* 画面下からの距離 */
+    right: 20px; /* 画面右からの距離 */
+    font-size: 0.85em; /* 文字サイズを少し小さく */
+    color: gray;
+    opacity: 0.8;
+    font-family: Arial, sans-serif;
+    pointer-events: none; /* クリックイベントを無視 */
+    background-color: rgba(255, 255, 255, 1); /* 白の半透明背景で重ならないように */
+    padding: 4px 8px; /* ラベル内に余白を追加 */
+    border-radius: 4px; /* 角を丸くして視覚的に整える */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3); /* 影を付けて少し浮かせる */
+}
+#tabMenu {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+.tabButton {
+    flex: 1;
+    padding: 10px;
+    cursor: pointer;
+    background-color: #e0e0e0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    text-align: center;
+}
+
+.tabButton.active {
+    background-color: #ffffff;
+    font-weight: bold;
+    border-bottom: 1px solid #ffffff; /* 選択中のタブとコンテンツをつなげる */
+}
+
+.tabContent {
+    display: none;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+
+.tabContent.active {
+    display: block;
+}
+#colorRanking, #mapLog {
+    margin-top: 20px;
+}
+
+#colorRanking ul, #logList {
+    list-style-type: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#colorRanking li, #logList li {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0;
+}
+
+#colorRanking .color-box {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 10px;
+    border: 1px solid #000;
+}
+.color-box {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    margin-right: 10px;
+    border: 1px solid #000;
+}
+#rankingList {
+    max-height: none; /* ランキングリストの高さ制限を解除 */
+    overflow: visible; /* スクロールを無効化 */
+    padding: 0;
+    list-style-type: none;
+}

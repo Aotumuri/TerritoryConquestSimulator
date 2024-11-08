@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy World Map Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <!-- キャンバスエリア -->
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+
+        <!-- サイドバー -->
+        <div id="sidebar">
+            <!-- タブメニュー -->
+            <div id="tabMenu">
+                <button class="tabButton" onclick="showTab('settingsTab')">地図設定</button>
+                <button class="tabButton" onclick="showTab('statusTab')">地図状況</button>
+            </div>
+            
+            <!-- 地図設定タブの内容 -->
+            <div id="settingsTab" class="tabContent">
+                <h2>地図設定</h2>
+                <button onclick="applyPreset('default')">デフォルト設定</button>
+                <button onclick="applyPreset('large')">大きな地図</button>
+                <button onclick="applyPreset('dense')">もっと大きな地図</button>
+                <button onclick="applyPreset('random')">ランダムパターン</button>
+                <button onclick="applyPreset('test')">テスト用パターン</button>
+
+                <h3>領地設定</h3>
+                <label for="cityToggle">都市を配置する</label>
+                <input type="checkbox" id="cityToggle">
+                <div id="cityRequirementContainer" style="display: none;">
+                    <label for="cityRequirement">都市を配置するのに必要なステート数:</label>
+                    <input type="number" id="cityRequirement" value="10" min="1">
+                </div>
+                
+                <label for="capitalToggle">首都を設定</label>
+                <input type="checkbox" id="capitalToggle">
+
+                <h3>地図操作</h3>
+                <button id="saveButton">設定を保存</button>
+                <button id="loadButton">設定をロード</button>
+
+                <label for="numCells">ステートの数: </label>
+                <input type="number" id="numCells" value="1000" min="10" max="10000">
+
+                <label for="mergeIterations">吸収回数: </label>
+                <input type="number" id="mergeIterations" value="0" min="1" max="500">
+
+                <label for="tickInterval">吸収間隔 (ミリ秒): </label>
+                <input type="number" id="tickInterval" value="50" min="10" max="10000">
+
+                <button id="regenerateButton">再生成</button>
+                <button id="singleMergeButton">吸収を一回実行</button>
+                <button id="multiMergeButton">指定数吸収を実行</button>
+                <button id="toggleAutoMergeButton">自動吸収開始/停止</button>
+
+                <label for="randomAbsorptionToggle">たまにランダム吸収を挟む</label>
+                <input type="checkbox" id="randomAbsorptionToggle">
+
+                <label for="absorptionPattern">吸収パターン: </label>
+                <select id="absorptionPattern">
+                    <option value="random">ランダム吸収</option>
+                    <option value="majority">多数決吸収(安定しやすい)</option>
+                    <option value="weighted">重み付き吸収</option>
+                    <option value="combined">重み付き多数決吸収</option>
+                    <option value="modified-weighted" id="modifiedWeightedOption">修正重みつき吸収</option>
+                </select>
+
+                <h3>表示設定</h3>
+                <label for="showBordersOnlyToggle">国境のみに線を表示</label>
+                <input type="checkbox" id="showBordersOnlyToggle">
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- 地図状況タブの内容 -->
+            <div id="statusTab" class="tabContent" style="display: none;">
+                <h2>地図状況</h2>
+                <label for="topCount">表示する上位数:</label>
+                <input type="number" id="topCount" value="10" min="1" style="width: 60px;">
+                <button onclick="updateColorRanking()">ランキング更新</button>
+            
+                <div id="colorRanking">
+                    <div id="rankingList"></div>
+                </div>
+
+                <label for="logLimit">地図ログの保存数:</label>
+                <input type="number" id="logLimit" value="100" min="10" style="width: 60px;">
+                <div id="mapLog">
+                    <h3>地図ログ</h3>
+                    <ul id="logList"></ul>
+                </div>
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- バージョン表示 -->
+            <div id="versionLabel">陣取り合戦シミュレータ v1.0.3.2<br>by ChatGPT & Aotumuri</div>
+        </div>
+    </div>
+
+    <!-- d3-delaunay CDN -->
+    <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
+    <script src="script.js"></script>
+    
+    <!-- タブ切り替えとランキング更新用のJavaScript関数 -->
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tabContent').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            document.querySelectorAll('.tabButton').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+
+        // 初期表示として「地図設定」タブを表示
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('settingsTab');
+        });
+
+        // 色のランキングを更新する関数
+        function updateColorRanking() {
+            const colorCounts = {};
+            const cells = window.cells || [];
+
+            // 各セルの色をカウント
+            cells.forEach(cell => {
+                if (!cell || !cell.color) return;
+                colorCounts[cell.color] = (colorCounts[cell.color] || 0) + 1;
+            });
+
+            // 表示する上位数を設定（ここでは10）
+            const topCountInput = document.getElementById('topCount');
+            const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
+
+            // 領地数の多い順にソートし、指定した数だけ取得
+            const sortedColors = Object.entries(colorCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, topCount);
+
+            // リストを表示する要素を取得
+            const rankingList = document.getElementById('rankingList');
+            rankingList.innerHTML = ""; // 一度内容をクリア
+
+            // ソートされた色と領地数を <p> 要素で表示
+            sortedColors.forEach(([color, count]) => {
+                const listItem = document.createElement('p');
+                listItem.innerHTML = `
+                    <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
+                    <span>${count} 領地</span>
+                `;
+                rankingList.appendChild(listItem);
+            });
+        }
+    </script>
+</body>
+</html>

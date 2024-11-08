@@ -3,66 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy World Map Generator</title>
-    <link rel="stylesheet" href="style.css">
+    <title>陣取り合戦シミュレータ - バージョン選択ハブ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .version-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* メジャーバージョンのリンク */
+        .version-item > a {
+            display: block;
+            font-size: 18px;
+            text-decoration: none;
+            color: #1a73e8;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: rgba(224, 231, 255, 0.7);
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        /* サブリストのスタイル */
+        .sub-list {
+            list-style-type: none;
+            padding: 0 0 0 20px;
+            margin-top: 5px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        /* 展開時のアニメーション */
+        .expanded > .sub-list {
+            max-height: 500px;
+        }
+
+        /* サブアイテムリンク */
+        .sub-item > a,
+        .super-link {
+            text-decoration: none;
+            font-size: 16px;
+            display: block;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 通常のサイトの色 */
+        .normal-link {
+            color: #357a38;
+            background-color: rgba(53, 122, 56, 0.15);
+        }
+
+        /* 没のサイトの色 */
+        .discarded-link {
+            color: #b71c1c;
+            background-color: rgba(183, 28, 28, 0.15);
+        }
+
+        /* 青みがかったサブメニューリンク */
+        .sub-menu-link {
+            color: #1a73e8;
+            font-weight: bold;
+            background-color: rgba(224, 231, 255, 0.5);
+        }
+
+        /* おすすめリンク（黄色） */
+        .super-link {
+            color: #8a6d3b;
+            background-color: rgba(255, 223, 0, 0.2); /* 薄い黄色 */
+        }
+
+        /* ホバーエフェクト */
+        .sub-item > a:hover,
+        .super-link:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        /* 開発中バージョンのスタイル */
+        .development-link {
+            color: #b85900; /* 濃いオレンジ */
+            background-color: rgba(255, 165, 0, 0.2); /* 薄いオレンジ */
+            font-weight: bold;
+            padding: 8px;
+            border-radius: 4px;
+            display: block;
+            text-decoration: none;
+            margin-bottom: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        /* 開発中バージョンのホバーエフェクト */
+        .development-link:hover {
+            background-color: rgba(255, 165, 0, 0.3); /* 濃いオレンジのホバー背景 */
+            transform: translateY(-2px); /* 少し浮くようなエフェクト */
+        }
+
+        /* 開発中バージョンのアクティブ状態 */
+        .development-link:active {
+            background-color: rgba(255, 140, 0, 0.4); /* さらに濃いオレンジ */
+            transform: translateY(0); /* アクティブ時は元の位置に戻す */
+        }
+
+    </style>
 </head>
 <body>
-    <div id="container">
-        <!-- キャンバスエリア -->
-        <canvas id="mapCanvas" width="800" height="600"></canvas>
 
-        <!-- サイドバー -->
-        <div id="sidebar">
-            <h2>地図設定</h2>
-            <button onclick="applyPreset('default')">デフォルト設定</button>
-            <button onclick="applyPreset('large')">大きな地図</button>
-            <button onclick="applyPreset('dense')">もっと大きな地図</button>
-            <button onclick="applyPreset('random')">ランダムパターン</button>
-        
-            <h3>領地設定</h3>
-            <label for="cityToggle">都市を配置する</label>
-            <input type="checkbox" id="cityToggle">
-            <div id="cityRequirementContainer" style="display: none;">
-                <label for="cityRequirement">都市を配置するのに必要なステート数:</label>
-                <input type="number" id="cityRequirement" value="10" min="1">
-            </div>
+    <div class="container">
+        <h1>陣取り合戦シミュレータ</h1>
 
-            <h3>地図操作</h3>
-            <button id="saveButton">設定を保存</button>
-            <button id="loadButton">設定をロード</button>
+        <!-- おすすめバージョン -->
+        <h4>おすすめのバージョン（最新版で安定！）</h4>
+        <a href="map-v1.0.3.2/index.html" target="_blank" class="super-link">1.0.3.2</a>
 
-            <label for="capitalToggle">首都を設定: </label>
-            <input type="checkbox" id="capitalToggle">
-
-            <label for="numCells">ステートの数: </label>
-            <input type="number" id="numCells" value="100" min="10" max="10000">
-
-            <label for="mergeIterations">吸収回数: </label>
-            <input type="number" id="mergeIterations" value="0" min="1" max="500">
-
-            <label for="tickInterval">吸収間隔 (ミリ秒): </label>
-            <input type="number" id="tickInterval" value="1000" min="10" max="10000">
-
-            <button id="regenerateButton">再生成</button>
-            <button id="singleMergeButton">吸収を一回実行</button>
-            <button id="multiMergeButton">指定数吸収を実行</button>
-            <button id="toggleAutoMergeButton">自動吸収開始/停止</button>
-
-            <label for="randomAbsorptionToggle">たまにランダム吸収を挟む</label>
-            <input type="checkbox" id="randomAbsorptionToggle">
-
-            <label for="absorptionPattern">吸収パターン: </label>
-            <select id="absorptionPattern">
-                <option value="random">ランダム吸収</option>
-                <option value="majority">多数決吸収(安定しやすい)</option>
-                <option value="weighted">重み付き吸収</option>
-                <option value="combined">重み付き多数決吸収</option>
-            </select>
-        </div>
+        <h4>お好きなバージョンを選んでください。</h4>
+        <!-- バージョン選択リスト -->
+        <ul class="version-list">
+            <!-- メジャーバージョン 1.0 -->
+            <li class="version-item">
+                <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.0</a>
+                <ul class="sub-list">
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.0.3</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.0.3.3/index.html" target="_blank" class="sub-item-link development-link">1.0.3.3</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.2/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.2</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1没2/index.html" target="_blank" class="sub-item-link discarded-link">1.0.3.1 没 2</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1没/index.html" target="_blank" class="sub-item-link discarded-link">1.0.3.1 没</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.1</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3/index.html" target="_blank" class="sub-item-link normal-link">1.0.3</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item"><a href="map-v1.0.2/index.html" target="_blank" class="sub-item-link normal-link">1.0.2</a></li>
+                    <li class="sub-item"><a href="map-v1.0.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.1</a></li>
+                </ul>
+            </li>
+        </ul>
     </div>
 
-    <!-- d3-delaunay CDN -->
-    <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        function toggleSubMenu(element) {
+            const parentItem = element.parentElement;
+            parentItem.classList.toggle('expanded');
+        }
+    </script>
+
 </body>
 </html>

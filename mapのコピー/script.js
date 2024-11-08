@@ -13,12 +13,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleAutoMergeButton = document.getElementById('toggleAutoMergeButton');
     const randomAbsorptionToggle = document.getElementById('randomAbsorptionToggle');
     const capitalToggle = document.getElementById('capitalToggle');
-    const territoryOptions = document.getElementById('territoryOptions');
-    const territorySettings = document.getElementById('territorySettings');
     const cityToggle = document.getElementById('cityToggle');
     const cityRequirementContainer = document.getElementById('cityRequirementContainer');
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
-    
+    // プリセット設定を適用する関数
+    function applyPreset(preset) {
+    switch (preset) {
+        case 'default':
+            document.getElementById('numCells').value = 500;
+            document.getElementById('mergeIterations').value = 50;
+            break;
+        case 'large':
+            document.getElementById('numCells').value = 1000;
+            document.getElementById('mergeIterations').value = 100;
+            break;
+        case 'dense':
+            document.getElementById('numCells').value = 2000;
+            document.getElementById('mergeIterations').value = 150;
+            break;
+        case 'random':
+            document.getElementById('numCells').value = Math.floor(Math.random() * 3000) + 500;
+            document.getElementById('mergeIterations').value = Math.floor(Math.random() * 100) + 50;
+            break;
+        default:
+            console.warn("不明なプリセットが選択されました:", preset);
+    }
+
+    // 設定を適用して再生成
+    const numCells = parseInt(document.getElementById('numCells').value);
+    const mergeIterations = parseInt(document.getElementById('mergeIterations').value);
+    generateAndDrawMap(numCells, mergeIterations);
+}
+
     // チェックボックスの変更に応じて表示・非表示を切り替え
     cityToggle.addEventListener('change', () => {
         if (cityToggle.checked) {
@@ -28,36 +54,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // 要素チェック
-    if (!canvas || !ctx || !regenerateButton || !saveButton || !loadButton || !singleMergeButton || !multiMergeButton || !toggleAutoMergeButton || !randomAbsorptionToggle || !capitalToggle || !territoryOptions || !territorySettings || !absorptionPatternSelect) {
+    //要素チェック
+    if (!canvas || !ctx || !regenerateButton || !saveButton || !loadButton || !singleMergeButton || !multiMergeButton || !toggleAutoMergeButton || !randomAbsorptionToggle || !capitalToggle || !absorptionPatternSelect) {
         console.error("必要な要素が見つかりませんでした。HTMLを確認してください。");
         return;
     }
+
+    // プリセット設定
+    const presets = {
+        default: { numCells: 100, mergeIterations: 0, tickInterval: 1000 },
+        large: { numCells: 1000, mergeIterations: 10, tickInterval: 500 },
+        dense: { numCells: 5000, mergeIterations: 50, tickInterval: 100 },
+        random: { numCells: Math.floor(Math.random() * 5000) + 500, mergeIterations: 20, tickInterval: 800 },
+    };
+
+    // プリセットを適用する関数
+    window.applyPreset = (presetName) => {
+        const preset = presets[presetName];
+        document.getElementById('numCells').value = preset.numCells;
+        document.getElementById('mergeIterations').value = preset.mergeIterations;
+        document.getElementById('tickInterval').value = preset.tickInterval;
+        generateAndDrawMap(preset.numCells, preset.mergeIterations);
+    };
     
     let cells = [];
     let capitals = new Map(); // 各領地の首都セル
     let autoMergeRunning = false;
     let autoMergeInterval = null;
     let lastTick = 0;
-
-    // 領地設定オプションが選択されたときに表示を切り替え
-    territoryOptions.addEventListener('change', () => {
-        territorySettings.innerHTML = ''; // 設定エリアをクリア
-
-        if (territoryOptions.value === 'relocation') {
-            territorySettings.innerHTML = `
-                <label for="relocationThreshold">首都再配置の最低領地数:</label>
-                <input type="number" id="relocationThreshold" value="10" min="1">
-                <button onclick="applyRelocationSettings()">適用</button>
-            `;
-        } else if (territoryOptions.value === 'cityCreation') {
-            territorySettings.innerHTML = `
-                <label for="cityInterval">都市を作る領地数の間隔:</label>
-                <input type="number" id="cityInterval" value="5" min="1">
-                <button onclick="generateCities()">都市を生成</button>
-            `;
-        }
-    });
 
     // 地図再生成ボタン
     regenerateButton.addEventListener('click', () => {
@@ -208,107 +232,184 @@ document.addEventListener('DOMContentLoaded', () => {
     // 吸収処理を行う
     function mergeAdjacentCells() {
         const merged = new Set();
-        const cityToggle = document.getElementById('cityToggle').checked;
         const absorptionPattern = absorptionPatternSelect.value;
         const randomAbsorptionEnabled = randomAbsorptionToggle.checked;
+        const capitalIsEnabled = capitalToggle.checked;
     
+        // 各セルに changeCount と cooldown プロパティを初期化
+        cells.forEach(cell => {
+            if (cell.changeCount === undefined) cell.changeCount = 0;
+            if (cell.cooldown === undefined) cell.cooldown = 0;
+        });
+    
+        // tick の開始時に cooldown を減少させる
+        cells.forEach(cell => {
+            if (cell.cooldown > 0) cell.cooldown -= 1;
+        });
+    
+        // 各セルの吸収処理
         cells.forEach((cell, index) => {
-            // 白色のセルは周りの色に無条件で吸収される
+            // 白色セルの処理（隣接セルの色を即座に吸収）
             if (cell.color === WHITE_COLOR) {
                 const neighborColors = getNeighborColors(cell, merged);
                 if (neighborColors.length > 0) {
-                    cell.color = neighborColors[0];
+                    cell.color = neighborColors[Math.floor(Math.random() * neighborColors.length)];
                     merged.add(index);
                 }
                 return;
             }
     
-            // 既に吸収処理されたセルは無視
+            // すでに処理されたセルはスキップ
             if (merged.has(index)) return;
+    
+            // 孤立判定を行い、孤立している場合はすべて周囲の色に変える
+            if (isIsolated(cell)) {
+                const neighborColors = getNeighborColors(cell, merged);
+                if (neighborColors.length > 0) {
+                    cell.color = neighborColors[Math.floor(Math.random() * neighborColors.length)];
+                    cell.cooldown = 0; // ロックを解除
+                    cell.changeCount = 0;
+                    merged.add(index);
+                }
+                return;
+            }
+    
+            // cooldown が残っている場合はスキップ
+            if (cell.cooldown > 0) return;
     
             const neighborColors = getNeighborColors(cell, merged);
             let selectedColor;
     
-            // 10%の確率でランダム吸収
+            // ランダム吸収（10%の確率）
             if (randomAbsorptionEnabled && Math.random() < 0.1) {
                 selectedColor = neighborColors[Math.floor(Math.random() * neighborColors.length)];
             } else {
                 selectedColor = selectColorByPattern(neighborColors, absorptionPattern, cell.color);
             }
     
-            if (selectedColor) {
+            if (selectedColor && selectedColor !== cell.color) {
+                // 色が変わった場合、changeCount を増やし、振り子防止のロジックを適用
+                cell.changeCount += 1;
+                if (cell.changeCount >= 2) {
+                    // 2回変化後、次の1回を固定
+                    cell.cooldown = 1;
+                    cell.changeCount = 0; // カウントをリセット
+                }
+    
                 // 首都セルが吸収された場合の処理
                 if (capitals.has(cell) && capitals.get(cell) !== selectedColor) {
                     capitals.delete(cell);
                     const remainingCities = cities.filter(c => c.color === cell.color);
-                    
+    
                     if (remainingCities.length > 0) {
-                        // 都市セルの中から新しい首都を再割り当て
                         const newCapitalCell = remainingCities[Math.floor(Math.random() * remainingCities.length)];
                         capitals.set(newCapitalCell, selectedColor);
-                    } else {
-                        selectedColor = WHITE_COLOR; // 都市がない場合、領地を白色化
+                    } else if (capitalIsEnabled) {
+                        selectedColor = WHITE_COLOR;
                     }
                 }
     
-                // 吸収後のセル色の設定と登録
+                // 吸収後のセル色の設定
                 cell.color = selectedColor;
                 merged.add(index);
             }
         });
     
-        // 白色化処理: 首都が存在しない色のセルを白色化
-        cells.forEach(cell => {
-            if (cell.color !== WHITE_COLOR && !Array.from(capitals.values()).includes(cell.color)) {
-                cell.color = WHITE_COLOR;
-            }
-        });
+        // 首都が有効な場合のみ、首都が存在しない領地を白色化
+        if (capitalIsEnabled) {
+            cells.forEach(cell => {
+                if (cell.color !== WHITE_COLOR && !Array.from(capitals.values()).includes(cell.color)) {
+                    cell.color = WHITE_COLOR;
+                }
+            });
+        }
     }
-
-    // 吸収の対象セルの色を選択
-    function selectColorByPattern(neighborColors, pattern, selfColor) {
+    
+    // 孤立判定：同じ色で連結したセルが4つ以下であれば孤立とみなす
+    function isIsolated(cell) {
+        const sameColorNeighbors = cell.neighbors.filter(neighborIndex => 
+            cells[neighborIndex].color === cell.color
+        );
+        return sameColorNeighbors.length <= 8;
+    }
+    
+    
+    // 吸収パターンに基づいて色を選択
+    function selectColorByPattern(neighborColors, pattern, selfColor, cell) {
         if (!neighborColors.length) return null;
     
-        // 隣接セルの色の出現回数を集計
         const colorCounts = neighborColors.reduce((acc, color) => {
             acc[color] = (acc[color] || 0) + 1;
             return acc;
         }, {});
     
-        // 吸収パターンごとの色選択ロジック
-        if (pattern === 'random') {
-            // 完全ランダムで選択
-            return neighborColors[Math.floor(Math.random() * neighborColors.length)];
-        } 
-        
-        if (pattern === 'majority') {
-            // 最も多く出現している色を選択
-            return Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b);
-        } 
-        
-        if (pattern === 'weighted') {
-            // 出現回数に応じて色を選択（重み付き）
-            const totalWeight = Object.values(colorCounts).reduce((sum, count) => sum + count, 0);
-            const selfCount = colorCounts[selfColor] || 0;
+        const NOISE_FACTOR = 10;
     
-            // 自分の色の重みを増やす（自分の色が多いほど選ばれやすくなる）
-            const selfProbability = (selfCount + 1) / (totalWeight + 1);
-            if (Math.random() < selfProbability) {
-                return selfColor;
-            } else {
-                // 自分の色以外で重み付きランダムを実行
-                let random = Math.random() * (totalWeight - selfCount);
-                for (const color in colorCounts) {
-                    if (color === selfColor) continue; // 自分の色はスキップ
-                    random -= colorCounts[color];
-                    if (random <= 0) return color;
-                }
-            }
+        if (pattern === 'random') {
+            return neighborColors[Math.floor(Math.random() * neighborColors.length)];
         }
     
-        // デフォルトでランダム（無効なパターンの場合も含む）
+        if (pattern === 'majority') {
+            return Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b);
+        }
+    
+        if (pattern === 'weighted') {
+            return weightedColorSelection(colorCounts, selfColor, cell);
+        }
+    
         return neighborColors[Math.floor(Math.random() * neighborColors.length)];
     }
+    
+    function weightedColorSelection(colorCounts, selfColor, cell) {
+        const NOISE_FACTOR = 10;
+        const totalWeight = Object.keys(colorCounts).reduce((sum, color) => {
+            const connectedSize = getConnectedStateSize(cell, color, new Set());
+            const noise = Math.floor(Math.random() * NOISE_FACTOR) - NOISE_FACTOR / 2;
+            return sum + ((colorCounts[color] + noise) * connectedSize);
+        }, 0);
+    
+        const selfConnectedSize = getConnectedStateSize(cell, selfColor, new Set());
+        const selfNoise = Math.floor(Math.random() * NOISE_FACTOR) - NOISE_FACTOR / 2;
+        const selfWeight = (colorCounts[selfColor] + selfNoise) * selfConnectedSize;
+    
+        if (Math.random() < selfWeight / (totalWeight + 1) * 0.8) {
+            return selfColor;
+        }
+    
+        let randomValue = Math.random() * (totalWeight - selfWeight);
+        for (const color in colorCounts) {
+            if (color === selfColor) continue;
+            const colorWeight = (colorCounts[color] + Math.floor(Math.random() * NOISE_FACTOR) - NOISE_FACTOR / 2) * getConnectedStateSize(cell, color, new Set());
+            randomValue -= colorWeight;
+            if (randomValue <= 0) return color;
+        }
+    
+        return selfColor;
+    }
+    function updateCellColor(cell, newColor) {
+        if (cell.color === newColor) return;
+    
+        cell.colorChangeCount += 1;
+    
+        if (cell.colorChangeCount >= MAX_COLOR_CHANGE_COUNT) {
+            cell.colorLock = true;
+            cell.lockCounter = RESET_COLOR_CHANGE_DELAY;
+        }
+    
+        cell.color = newColor;
+    }
+    function updateLockStatus() {
+        cells.forEach(cell => {
+            if (cell.colorLock) {
+                cell.lockCounter -= 1;
+                if (cell.lockCounter <= 0) {
+                    cell.colorLock = false;
+                    cell.colorChangeCount = 0;
+                }
+            }
+        });
+    }
+            
 
     // 隣接セルの色を取得
     function getNeighborColors(cell, merged) {
@@ -366,6 +467,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 cities.push(randomCell);
             }
         }
+    }
+    
+    // 連結されたステートのサイズを取得（キャッシュ付き）
+    function getConnectedStateSize(cell, color, visited = new Set(), cache = new Map()) {
+        // `cell` が `null` または `undefined` であればサイズを 0 とする
+        if (!cell || cell.color !== color || visited.has(cell)) return 0;
+        
+        if (cache.has(cell)) return cache.get(cell); // キャッシュされた値があればそれを返す
+    
+        visited.add(cell);
+        let size = 1;
+        
+        cell.neighbors.forEach(neighborIndex => {
+            const neighbor = cells[neighborIndex];
+            if (neighbor && neighbor.color === color && !visited.has(neighbor)) {
+                size += getConnectedStateSize(neighbor, color, visited, cache);
+            }
+        });
+    
+        // ランダムな±10のノイズを追加
+        const noisySize = size + Math.floor(Math.random() * 21 - 10);
+        cache.set(cell, noisySize); // キャッシュに保存する
+        return noisySize;
     }
 
     // 初期地図の生成

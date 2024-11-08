@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy World Map Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <!-- キャンバスエリア -->
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+
+        <!-- サイドバー -->
+        <div id="sidebar">
+            <h2>地図設定</h2>
+            <button onclick="applyPreset('default')">デフォルト設定</button>
+            <button onclick="applyPreset('large')">大きな地図</button>
+            <button onclick="applyPreset('dense')">もっと大きな地図</button>
+            <button onclick="applyPreset('random')">ランダムパターン</button>
+        
+            <h3>領地設定</h3>
+            <label for="cityToggle">都市を配置する</label>
+            <input type="checkbox" id="cityToggle">
+            <div id="cityRequirementContainer" style="display: none;">
+                <label for="cityRequirement">都市を配置するのに必要なステート数:</label>
+                <input type="number" id="cityRequirement" value="10" min="1">
+            </div>
+
+            <h3>地図操作</h3>
+            <button id="saveButton">設定を保存</button>
+            <button id="loadButton">設定をロード</button>
+
+            <label for="capitalToggle">首都を設定: </label>
+            <input type="checkbox" id="capitalToggle">
+
+            <label for="numCells">ステートの数: </label>
+            <input type="number" id="numCells" value="100" min="10" max="10000">
+
+            <label for="mergeIterations">吸収回数: </label>
+            <input type="number" id="mergeIterations" value="0" min="1" max="500">
+
+            <label for="tickInterval">吸収間隔 (ミリ秒): </label>
+            <input type="number" id="tickInterval" value="1000" min="10" max="10000">
+
+            <button id="regenerateButton">再生成</button>
+            <button id="singleMergeButton">吸収を一回実行</button>
+            <button id="multiMergeButton">指定数吸収を実行</button>
+            <button id="toggleAutoMergeButton">自動吸収開始/停止</button>
+
+            <label for="randomAbsorptionToggle">たまにランダム吸収を挟む</label>
+            <input type="checkbox" id="randomAbsorptionToggle">
+
+            <label for="absorptionPattern">吸収パターン: </label>
+            <select id="absorptionPattern">
+                <option value="random">ランダム吸収</option>
+                <option value="majority">多数決吸収(安定しやすい)</option>
+                <option value="weighted">重み付き吸収</option>
+                <option value="combined">重み付き多数決吸収</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- d3-delaunay CDN -->
+    <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
