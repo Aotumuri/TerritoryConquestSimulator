@@ -83,6 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('randomAbsorptionToggle').checked = Math.random() < 0.5; // 50%の確率でランダム吸収
             document.getElementById('absorptionPattern').value = ['random', 'majority', 'weighted', 'combined', 'modified-weighted'][Math.floor(Math.random() * 4)];
             document.getElementById('showBordersOnlyToggle').checked = Math.random() < 0.5; 
+            if(document.getElementById('absorptionPattern').value == 'random')
+            {
+                document.getElementById('mergeIterations').value = 100;
+            }
             
         } else if (presetName === 'test') {
             // 他のプリセットを設定
@@ -106,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('cityToggle').checked = false;
             document.getElementById('cityRequirement').value = 10;
             document.getElementById('randomAbsorptionToggle').checked = false;
-            document.getElementById('absorptionPattern').value = 'random';
+            document.getElementById('absorptionPattern').value = 'modified-weighted';
             document.getElementById('showBordersOnlyToggle').checked = true;
         }
         showBordersOnly = document.getElementById('showBordersOnlyToggle').checked
@@ -295,8 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const neighborColors = getNeighborColors(cell, merged);
             let selectedColor;
     
-            // ランダム吸収（10%の確率）
-            if (randomAbsorptionEnabled && Math.random() < 0.1) {
+            // ランダム吸収（10%の確率）　(ランダムは無視)
+            if (randomAbsorptionEnabled && Math.random() < 0.1 || (absorptionPattern === 'random')) {
                 selectedColor = neighborColors[Math.floor(Math.random() * neighborColors.length)];
             } else {
                 selectedColor = selectColorByPattern(neighborColors, absorptionPattern, cell.color);
@@ -423,9 +427,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 他のパターン
-        if (pattern === 'random') {
-            return neighborColors[Math.floor(Math.random() * neighborColors.length)];
-        }
+        // if (pattern === 'random') {
+        //     return neighborColors[Math.floor(Math.random() * neighborColors.length)];
+        // }
 
         if (pattern === 'majority') {
             return Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b);
