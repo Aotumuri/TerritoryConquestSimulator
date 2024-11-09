@@ -68,6 +68,7 @@
                     <option value="weighted" selected>重み付き吸収</option>
                     <option value="combined">重み付き多数決吸収</option>
                     <option value="modified-weighted" id="modifiedWeightedOption" >修正重みつき吸収</option>
+                    <option value="global-modified-weighted" id="modifiedWeightedOption" >全体修正重みつき吸収</option>
                 </select>
 
                 <h3>表示設定</h3>
@@ -127,27 +128,28 @@
 
         // 色のランキングを更新する関数
         function updateColorRanking() {
-            const colorCounts = {};
+            // colorCountを初期化
+            window.colorCount = {};
             const cells = window.cells || [];
 
-            // 各セルの色をカウント
+            // 各セルの色をカウントしてcolorCountに保存
             cells.forEach(cell => {
                 if (!cell || !cell.color) return;
-                colorCounts[cell.color] = (colorCounts[cell.color] || 0) + 1;
+                window.colorCount[cell.color] = (window.colorCount[cell.color] || 0) + 1;
             });
 
-            // 表示する上位数を設定（ここでは10）
+            // 上位の表示数を取得
             const topCountInput = document.getElementById('topCount');
             const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
 
             // 領地数の多い順にソートし、指定した数だけ取得
-            const sortedColors = Object.entries(colorCounts)
+            const sortedColors = Object.entries(window.colorCount)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, topCount);
 
-            // リストを表示する要素を取得
+            // リストを表示する要素を取得し、内容をクリア
             const rankingList = document.getElementById('rankingList');
-            rankingList.innerHTML = ""; // 一度内容をクリア
+            rankingList.innerHTML = "";
 
             // ソートされた色と領地数を <p> 要素で表示
             sortedColors.forEach(([color, count]) => {
@@ -159,6 +161,7 @@
                 rankingList.appendChild(listItem);
             });
         }
+
     </script>
 </body>
 </html>
