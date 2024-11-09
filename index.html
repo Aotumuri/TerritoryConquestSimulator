@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="TCS.png" type="image/png">
+    <link rel="icon" href="TCS.webp" type="image/png">
     <title>陣取り合戦シミュレータ - バージョン選択ハブ</title>
     <style>
         body {
@@ -18,15 +18,19 @@
 
         .container {
             position: relative;
-            z-index: 1; /* コンテンツをオーバーレイより前面に配置 */
+            z-index: 1;
             width: 100%;
             max-width: 600px;
+            max-height: 90vh; /* ビューポートの90%の高さに制限 */
+            overflow-y: auto; /* 必要に応じてスクロール */
+            box-sizing: border-box;
             text-align: center;
-            background: rgba(255, 255, 255, 0.8); /* コンテンツの背景を白で少し透明に */
+            background: rgba(255, 255, 255, 0.8);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
 
 
         h1 {
@@ -153,26 +157,46 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* 100% 以上の高さに対応 */
+            min-height: 100vh;
             margin: 0;
-            background-image: url('background.png'); /* 背景画像 */
-            background-size: cover; /* 画面に合わせて画像を拡大縮小 */
-            background-position: center; /* 中央に配置 */
-            background-repeat: no-repeat;
-            /* background-attachment: fixed; 背景を固定 */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), 
+                            url('background.webp');
+            background-size: cover;
+            background-position: center bottom; /* 下から開始 */
+            background-repeat: repeat-y;
             position: relative;
         }
 
-        /* オーバーレイを追加して背景を薄くする */
+        /* 背景スクロールアニメーション */
+        @keyframes scrollBackground {
+            0% { background-position: center bottom; } /* 開始位置を下に */
+            100% { background-position: center top; }   /* 終了位置を上に */
+        }
+
         body::before {
             content: '';
-            position: fixed; /* 背景を固定 */
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100vw; /* ビューポート幅に合わせる */
-            height: 100vh; /* ビューポート高さに合わせる */
+            width: 100%;
+            height: 200%; /* 2倍の高さにしてスムーズに繋げる */
+            background-image: url('background.webp');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: repeat-y;
+            filter: blur(3px); /* ぼかし効果 */
+            animation: scrollBackground 300s linear infinite;
+            z-index: -2; /* 背景を後ろに配置 */
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
             background-color: rgba(255, 255, 255, 0.6); /* 白のオーバーレイ、透明度60% */
-            z-index: -1; /* 背景の背面に配置 */
+            z-index: -1; /* コンテンツの後ろ、背景画像の前に配置 */
         }
         /* 右下にバージョン情報を固定表示 */
         .version-info {
@@ -182,6 +206,10 @@
             color: rgba(0, 0, 0, 0.3); /* うっすらとした灰色 */
             font-size: 32px;
             font-family: Arial, sans-serif;
+        }
+        @keyframes scrollBackground {
+            0% { background-position: center bottom; }
+            100% { background-position: center top; }
         }
         /* お知らせエリア */
         /* .announcements {
@@ -207,15 +235,17 @@
     </style>
 </head>
 <body>
+    <div class="scrolling-background"></div>
     <div class="container">
         <h1>陣取り合戦シミュレータ</h1>
-        <img src="TCS.png" alt="TCSアイコン" class="large-icon"><br>
+        <img src="TCS.webp" alt="TCSアイコン" class="large-icon"><br>
+        <b>なんとなく、領土が変わっていくところを見たい人。<br>勝手に色々変わっていくものが見たい人ようです。</b><br>
         <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a>
         <!-- おすすめバージョン -->
-        <h4>おすすめのバージョン（最新版で安定！）</h4>
-        <a href="map-v1.0.3.4/index.html" target="_blank" class="super-link">1.0.3.4</a>
+        <h3>おすすめのバージョン（最新版で安定！）</h3>
+        <a href="map-v1.0.4/index.html" target="_blank" class="super-link">1.0.4</a>
 
-        <h4>お好きなバージョンを選んでください。</h4>
+        <h3>お好きなバージョンを選んでください。</h3>
         <p>古いバージョンはバグを含んでる可能性があります。</p>
         <p>バージョンの見方<br>青:リスト, 緑:リリースされたバージョン, <br>赤:バグのため消されたバージョン, オレンジ:開発中</p>
 
@@ -226,7 +256,8 @@
             <li class="version-item">
                 <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.0</a>
                 <ul class="sub-list">
-                    <li class="sub-item"><a href="map-v1.0.4/index.html" target="_blank" class="sub-item-link development-link">1.0.4</a></li>
+                    <li class="sub-item"><a href="map-v1.0.5/index.html" target="_blank" class="sub-item-link development-link">1.0.5</a></li>
+                    <li class="sub-item"><a href="map-v1.0.4/index.html" target="_blank" class="sub-item-link normal-link">1.0.4</a></li>
                     <li class="sub-item">
                         <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.0.3</a>
                         <ul class="sub-list">
@@ -251,7 +282,7 @@
             <div class="announcement-item">TCS-HUB v1.1 開発中のプレビューが近日公開予定です。</div>
         </div> -->
     </div>
-    <div class="version-info">TCS-HUB v1.0.1.1</div>
+    <div class="version-info">TCS-HUB v1.0.2</div>
 
     <script>
         function toggleSubMenu(element) {
