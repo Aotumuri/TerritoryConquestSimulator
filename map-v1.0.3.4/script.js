@@ -372,61 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
-    let colorCountCache = {}; // キャッシュとして使うオブジェクト
-    let updateCount = 0; // 更新カウンター
-    function getCachedColorRanking() {
-        if (updateCount % 10 === 0) {
-            colorCountCache = getColorRankingFromHTML();
-        }
-        updateCount++;
-        return colorCountCache;
-    }
-    function hexToRgb(hex) {
-        // 先頭の '#' を取り除く
-        hex = hex.replace(/^#/, '');
-    
-        // 3桁または6桁の16進数であることを確認
-        if (!/^([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex)) {
-            console.error(`Invalid hex color: ${hex}`);
-            return null; // 不正なカラーコードの場合は null を返す
-        }
-        
-        // 3桁の16進数の場合、6桁に変換する
-        if (hex.length === 3) {
-            hex = hex.split('').map(char => char + char).join('');
-        }
-    
-        const bigint = parseInt(hex, 16);
-        const r = (bigint >> 16) & 255;
-        const g = (bigint >> 8) & 255;
-        const b = bigint & 255;
-    
-        // RGB形式の文字列として返す（スペース入り）
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-    function rgbToHex(rgb) {
-        // rgbの形式が正しいか確認
-        const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
-        if (!result) return rgb; // 不正な形式ならそのまま返す
-        
-        // 各成分を16進数に変換
-        const r = parseInt(result[1]).toString(16).padStart(2, '0');
-        const g = parseInt(result[2]).toString(16).padStart(2, '0');
-        const b = parseInt(result[3]).toString(16).padStart(2, '0');
-    
-        // #付きの16進形式で返す
-        return `#${r}${g}${b}`;
-    }
     // selectColorByPattern：neighborColors, pattern, selfColorだけで動作するように変更
     function selectColorByPattern(neighborColors, pattern, selfColor) {
         if (!neighborColors.length) return null;
-        console.log("Current Color Count in selectColorByPattern:", window.colorCount);
-
         // 隣接セルの色の出現頻度をカウント
         const colorCounts = neighborColors.reduce((acc, color) => {
             acc[color] = (acc[color] || 0) + 1;
             return acc;
         }, {});
+        // console.log(`${selfColor}, ${neighborColors}`);
 
         const totalWeight = Object.values(colorCounts).reduce((sum, count) => sum + count, 0);
         const isCityEnabled = document.getElementById('cityToggle').checked;
@@ -436,38 +390,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const isIsolated = !neighborColors.includes(selfColor);
 
         // 孤立している場合は他の色に吸収されやすくする
-        if (isIsolated) {
-            return neighborColors.find(c => Math.random() < (colorCounts[c] / totalWeight) * 1.5);
-        }
-
+        // if (isIsolated) {
+        //     return neighborColors.find(c => Math.random() < (colorCounts[c] / totalWeight) * 1.5);
+        // }
         if (pattern === 'global-modified-weighted') {
             const selfColorCount = colorCounts[selfColor] || 0;
-            const colorCount = window.colorCount;
-
-            // `selfColor`と`dominantColor`を16進カラー形式に変換
-            const selfColorHex = rgbToHex(selfColor);
-            const dominantColor = Object.keys(colorCounts).reduce((a, b) => 
-                colorCounts[a] > colorCounts[b] ? a : b);
-            const dominantColorHex = rgbToHex(dominantColor);
-    
-            // colorCount からカウントを取得
-            const selfGlobalCount = colorCount[selfColorHex] || 1;
-            const dominantGlobalCount = colorCount[dominantColorHex] || 1;
-    
-            // デバッグ：カウントの確認
-            const totalDifferenceFactor = dominantGlobalCount / selfGlobalCount;
-            // 確率を調整し、領土数の差が大きいほど吸収されやすくなる
-            if(Math.random() < Math.pow(totalDifferenceFactor, 3) / 1.5) {
-                return dominantColor;
+            // colorCounts から最も頻度の高い色を取得
+            let dominantColor = Object.keys(colorCounts).reduce((a, b) =>
+                colorCounts[a] > colorCounts[b] ? a : b
+            );
+            // dominantColor が selfColor と同じ場合、50%の確率で colorCounts のランダムな色を選択
+            if (dominantColor === selfColor) {
+                if (Math.random() < 0.75) {
+                    const colors = Object.keys(colorCounts);
+                    // ランダムに colorCounts のキー（色）を選択
+                    dominantColor = colors[Math.floor(Math.random() * colors.length)];
+                }
             }
-            // 自分の色または隣接色を重み付き確率で選択
-            if (Math.random() < selfColorCount / totalWeight) {
+
+            if(selfColorCount == dominantColor)
+            {
                 return selfColor;
             }
-    
-            return neighborColors.find(c => Math.random() < colorCounts[c] / totalWeight);
-        }
+            else
+            {
+                const selfGlobalCount = colorCount[selfColor] || 0;
+                const dominantGlobalCount = colorCount[dominantColor] || 0;
+        
+                const totalDifferenceFactor = dominantGlobalCount / (selfGlobalCount + 1);
+                // console.log(`selfGlobalCount: ${selfGlobalCount}, dominantGlobalCount: ${dominantGlobalCount}`);
+                // console.log(`selfColor: ${selfColor} (count: ${selfGlobalCount}), dominantColor: ${dominantColor} (count: ${dominantGlobalCount})`);
+                // console.log(`Total Difference Factor: ${totalDifferenceFactor}`);
 
+                if (Math.random() < Math.pow(totalDifferenceFactor, 1.2) / 3) {
+                    return dominantColor;
+                }
+        
+                if (Math.random() < selfColorCount / totalWeight) {
+                    return selfColor;
+                }
+        
+                return neighborColors.find(c => Math.random() < colorCounts[c] / totalWeight);
+            }
+        }
         // 修正重みつき吸収パターン
         if (pattern === 'modified-weighted' && (isCityEnabled || isCapitalEnabled)) {
             const selfColorCount = colorCounts[selfColor] || 0;
@@ -513,23 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return neighborColors[Math.floor(Math.random() * neighborColors.length)];
     }
 
-    function getColorRankingFromHTML() {
-        const colorCount = {};
-        const rankingListItems = document.querySelectorAll('#rankingList p');
     
-        rankingListItems.forEach(item => {
-            const colorBox = item.querySelector('.color-box');
-            const countText = item.innerText.match(/(\d+) 領地/);
-            
-            if (colorBox && countText) {
-                const color = colorBox.style.backgroundColor;
-                const count = parseInt(countText[1]);
-                colorCount[color] = count;
-            }
-        });
-    
-        return colorCount;
-    }
     // 隣接セルの色を取得
     function getNeighborColors(cell, merged) {
         return cell.neighbors
@@ -821,7 +770,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    function showTab(tabId) {
+        document.querySelectorAll('.tabContent').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        document.querySelectorAll('.tabButton').forEach(button => {
+            button.classList.remove('active');
+        });
+        
+        document.getElementById(tabId).style.display = 'block';
+        document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+    }
     
+    // 初期表示として「地図設定」タブを表示
+    document.addEventListener('DOMContentLoaded', () => {
+        showTab('settingsTab');
+    });
+
+    let colorCount = {};
+    // 色のランキングを更新する関数
+    function updateColorRanking() {
+        colorCount = {};
+        const cells = window.cells || [];
+    
+        // 各セルの色をカウント
+        cells.forEach(cell => {
+            if (!cell || !cell.color) return;
+            colorCount[cell.color] = (colorCount[cell.color] || 0) + 1;
+        });
+    
+        // 表示する上位数を設定（デフォルトは10）
+        const topCountInput = document.getElementById('topCount');
+        const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
+    
+        // 領地数の多い順にソートし、指定した数だけ取得
+        const sortedColors = Object.entries(colorCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, topCount);
+    
+        // リストを表示する要素を取得
+        const rankingList = document.getElementById('rankingList');
+        rankingList.innerHTML = ""; // 一度内容をクリア
+    
+        // ソートされた色と領地数を <p> 要素で表示
+        sortedColors.forEach(([color, count]) => {
+            const listItem = document.createElement('p');
+            listItem.innerHTML = `
+                <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
+                <span>${count} 領地</span>
+            `;
+            rankingList.appendChild(listItem);
+        });
+    }
+    
+    // グローバルにアクセスできるように関数を window に追加
+    window.showTab = showTab;
+    window.updateColorRanking = updateColorRanking;
     
     // 隣接セルとの共有エッジを確認する関数
     function isSharedEdge(cell1, cell2, start, end) {
@@ -845,7 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas(); // 初期化時にもキャンバスサイズを設定
     
-    
     // 初期地図の生成
     generateAndDrawMap(100, 0);
+    
 });

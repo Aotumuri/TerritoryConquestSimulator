@@ -98,16 +98,15 @@
             </div>
 
             <!-- バージョン表示 -->
-            <div id="versionLabel">陣取り合戦シミュレータ v1.0.3.3<br>by ChatGPT & Aotumuri</div>
+            <div id="versionLabel">陣取り合戦シミュレータ v1.0.3.4<br>by ChatGPT & Aotumuri</div>
         </div>
     </div>
 
     <!-- d3-delaunay CDN -->
     <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
-    <script src="script.js"></script>
     
     <!-- タブ切り替えとランキング更新用のJavaScript関数 -->
-    <script>
+    <!-- <script>
         function showTab(tabId) {
             document.querySelectorAll('.tabContent').forEach(tab => {
                 tab.style.display = 'none';
@@ -128,28 +127,27 @@
 
         // 色のランキングを更新する関数
         function updateColorRanking() {
-            // colorCountを初期化
-            window.colorCount = {};
+            const colorCount = {};
             const cells = window.cells || [];
 
-            // 各セルの色をカウントしてcolorCountに保存
+            // 各セルの色をカウント
             cells.forEach(cell => {
                 if (!cell || !cell.color) return;
-                window.colorCount[cell.color] = (window.colorCount[cell.color] || 0) + 1;
+                colorCount[cell.color] = (colorCount[cell.color] || 0) + 1;
             });
 
-            // 上位の表示数を取得
+            // 表示する上位数を設定（ここでは10）
             const topCountInput = document.getElementById('topCount');
             const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
 
             // 領地数の多い順にソートし、指定した数だけ取得
-            const sortedColors = Object.entries(window.colorCount)
+            const sortedColors = Object.entries(colorCount)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, topCount);
 
-            // リストを表示する要素を取得し、内容をクリア
+            // リストを表示する要素を取得
             const rankingList = document.getElementById('rankingList');
-            rankingList.innerHTML = "";
+            rankingList.innerHTML = ""; // 一度内容をクリア
 
             // ソートされた色と領地数を <p> 要素で表示
             sortedColors.forEach(([color, count]) => {
@@ -162,6 +160,7 @@
             });
         }
 
-    </script>
+    </script> -->
+    <script src="script.js"></script>
 </body>
 </html>
