@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // ランダムプリセット：各項目をランダムに設定
             document.getElementById('numCells').value = Math.floor(Math.random() * 1000) + 500; // 500 ～ 10000
             document.getElementById('mergeIterations').value = 0;
-            document.getElementById('tickInterval').value = 50;
+            document.getElementById('tickInterval').value = 75;
             document.getElementById('capitalToggle').checked = Math.random() < 0.5;// 50%の確率で都市の配置を有効化
             document.getElementById('cityToggle').checked = Math.random() < 0.5; 
             document.getElementById('cityRequirement').value = Math.floor(Math.random() * 50) + 1; // 1 ～ 50
