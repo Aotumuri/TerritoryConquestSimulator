@@ -611,7 +611,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let scale = 1.5; // 初期のズームスケール
     let origin = { x: 0, y: 0 }; // キャンバスのドラッグ開始点
     let isDragging = false;
-    let lastMousePosition = { x: 0, y: 0 };
     
     // ズーム機能（ホイール操作およびピンチ操作）
     canvas.addEventListener('wheel', (e) => {
@@ -692,6 +691,11 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('touchend', () => {
         isDragging = false;
     });
+    function centerMap() {
+        origin.x = (canvas.width - canvas.width * scale) / 2;
+        origin.y = (canvas.height - canvas.height * scale) / 2;
+        drawCells(); // 中心設定後に再描画
+    }
         
     // drawCells関数を更新してズームとドラッグを反映
     function drawCells() {
@@ -893,5 +897,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 初期地図の生成
     generateAndDrawMap(100, 0);
-    
+    centerMap();
 });
