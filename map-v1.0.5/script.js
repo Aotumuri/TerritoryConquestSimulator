@@ -42,9 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // プリセット設定
     const presets = {
-        default: { numCells: 500, mergeIterations: 0, tickInterval: 50 },
-        large: { numCells: 1000, mergeIterations: 0, tickInterval: 50 },
-        dense: { numCells: 2000, mergeIterations: 0, tickInterval: 50 },
+        default: { numCells: 500, mergeIterations: 0, tickInterval: 75 },
+        large: { numCells: 1000, mergeIterations: 0, tickInterval: 75 },
+        dense: { numCells: 2000, mergeIterations: 0, tickInterval: 75 },
         test: { numCells: 5000, mergeIterations: 0, tickInterval: 25 }
 
     };
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('tickInterval').value = preset.tickInterval;
             document.getElementById('capitalToggle').checked = true;
             document.getElementById('cityToggle').checked = true;
-            document.getElementById('cityRequirement').value = 200;
+            document.getElementById('cityRequirement').value = 500;
             document.getElementById('randomAbsorptionToggle').checked = true;
             document.getElementById('absorptionPattern').value = 'global-modified-weighted';
             document.getElementById('showBordersOnlyToggle').checked = true;
@@ -317,19 +317,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (capitals.has(cell) && capitals.get(cell) !== selectedColor) {
                     capitals.delete(cell); // 旧首都を削除
                     addMapLog(selectedColor, "の首都を奪いました", cell.color);
-    
+                
                     // 新しい首都を設定する条件チェック
                     const sameColorCells = cells.filter(c => c.color === cell.color);
                     const remainingCities = sameColorCells.filter(c => cities.includes(c));
-    
+                
                     // 同じ色の領地に都市が存在する場合、最初の都市を新しい首都に昇格
                     if (remainingCities.length > 0 && capitalIsEnabled) {
                         const newCapitalCell = remainingCities[0];
-                        capitals.set(newCapitalCell, selectedColor);
+                        capitals.set(newCapitalCell, cell.color); // 新しい都市に首都を設定
                         addMapLog(cell.color, "は他の都市に首都を移転しました。");
-                    }
-                    else
-                    {
+                    } else {
                         addMapLog(cell.color, "は滅亡しました。");
                     }
                 }
@@ -615,43 +613,86 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDragging = false;
     let lastMousePosition = { x: 0, y: 0 };
     
-    // キャンバスのズーム機能（ホイール操作）
+    // ズーム機能（ホイール操作およびピンチ操作）
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const zoomAmount = e.deltaY * -0.001; // ホイールのスクロール量を反映
+        const zoomAmount = e.deltaY * -0.001; 
         scale += zoomAmount;
-        scale = Math.min(Math.max(0.5, scale), 3); // ズーム範囲を0.5倍～3倍に制限
+        scale = Math.min(Math.max(0.5, scale), 3); // ズーム範囲を制限
         drawCells();
     });
-    
-    // ドラッグ開始 (マウスボタンを押した時)
+
+    // タッチズーム（ピンチ）対応
+    let lastDistance = null;
+    canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            if (lastDistance) {
+                const zoomAmount = (currentDistance - lastDistance) * 0.005;
+                scale += zoomAmount;
+                scale = Math.min(Math.max(0.5, scale), 3);
+                drawCells();
+            }
+            lastDistance = currentDistance;
+        }
+    });
+
+    canvas.addEventListener('touchend', () => {
+        lastDistance = null;
+    });
+
+    let lastPosition = { x: 0, y: 0 };
+
     canvas.addEventListener('mousedown', (e) => {
         isDragging = true;
-        lastMousePosition = { x: e.clientX, y: e.clientY };
+        lastPosition = { x: e.clientX, y: e.clientY };
     });
-    
-    // ドラッグ中 (マウスを動かしている時)
+
     canvas.addEventListener('mousemove', (e) => {
         if (isDragging) {
-            const dx = e.clientX - lastMousePosition.x;
-            const dy = e.clientY - lastMousePosition.y;
+            const dx = e.clientX - lastPosition.x;
+            const dy = e.clientY - lastPosition.y;
             origin.x += dx;
             origin.y += dy;
-            lastMousePosition = { x: e.clientX, y: e.clientY };
+            lastPosition = { x: e.clientX, y: e.clientY };
             drawCells();
         }
     });
-    
-    // ドラッグ解除 (マウスボタンを離した時)
+
     canvas.addEventListener('mouseup', () => {
         isDragging = false;
     });
-    
-    // キャンバス外に出た場合もドラッグを解除
-    canvas.addEventListener('mouseleave', () => {
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            lastPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - lastPosition.x;
+            const dy = e.touches[0].clientY - lastPosition.y;
+            origin.x += dx;
+            origin.y += dy;
+            lastPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            drawCells();
+        }
+    });
+
+    canvas.addEventListener('touchend', () => {
         isDragging = false;
     });
-    
+        
     // drawCells関数を更新してズームとドラッグを反映
     function drawCells() {
         //設定系
