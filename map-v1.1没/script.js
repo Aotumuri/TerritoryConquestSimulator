@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cityToggle = document.getElementById('cityToggle');
     const cityRequirementContainer = document.getElementById('cityRequirementContainer');
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
+    const showAllianceBordersToggle = document.getElementById('showAllianceBordersToggle');
+
 
     let showBordersOnly = false; // 初期設定はオフ
 
@@ -230,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
         drawCells(); // 生成後に描画
+        manageAlliances();
     }
 
     // 各領地の首都を設定
@@ -305,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 selectedColor = selectColorByPattern(neighborColors, absorptionPattern, cell.color);
             }
-    
+            if(areAllied(cell.color, selectedColor)) return;
             if (selectedColor) {
                 // 都市の陥落処理：都市セルが別の色に吸収された場合、都市から除外
                 if (cities.includes(cell) && cell.color !== selectedColor) {
@@ -615,6 +618,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    let alliances = new Map();
+    let allianceColors = new Map(); // 同盟グループごとの特別な色
+    // 同盟トグルの取得
+    const allianceToggle = document.getElementById('allianceToggle');
+    // ランダムに特別な色を生成する関数
+    function getUniqueColor() {
+        return `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+    }
+
+    // 同盟グループに色を割り当てる関数
+    function assignAllianceColor(color) {
+        if (!allianceColors.has(color)) {
+            allianceColors.set(color, getUniqueColor());
+        }
+        return allianceColors.get(color);
+    }
+
+    // 同盟の色を取得する関数
+    function getAllianceColor(color) {
+        if (!alliances.has(color)) return null;
+        return assignAllianceColor(color);
+    }
+    // 2つの色間で同盟のオン/オフを切り替える関数
+    function toggleAlliance(color1, color2) {
+        if (!alliances.has(color1)) alliances.set(color1, new Set());
+        if (!alliances.has(color2)) alliances.set(color2, new Set());
+    
+        alliances.get(color1).add(color2);
+        alliances.get(color2).add(color1);
+    
+        // 同盟グループに特別な色を割り当て
+        assignAllianceColor(color1);
+        assignAllianceColor(color2);
+    }
+    // 2つの領地が同盟関係にあるか確認する関数
+    function areAllied(color1, color2) {
+        return alliances.has(color1) && alliances.get(color1).has(color2);
+    }
+
+    // 条件に基づき同盟を結ぶ・破棄する
+    function manageAlliances() {
+        cells.forEach(cell => {
+            cell.neighbors.forEach(neighborIndex => {
+                const neighbor = cells[neighborIndex];
+                if (neighbor && cell.color !== neighbor.color) {
+                    if (allianceToggle.checked && Math.random() < 0.5) {
+                        toggleAlliance(cell.color, neighbor.color);
+                        addMapLog(cell.color, `${neighbor.color}と同盟を結びました`);
+                    }
+                }
+            });
+        });
+    }
+
     let scale = 1.5; // 初期のズームスケール
     let origin = { x: 0, y: 0 }; // キャンバスのドラッグ開始点
     let isDragging = false;
@@ -706,10 +763,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
     // drawCells関数を更新してズームとドラッグを反映
     function drawCells() {
-        //設定系
+        // 設定系
         toggleModifiedWeightedOption();
-
-
+    
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
     
@@ -735,9 +791,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const neighbor = cells[neighborIndex];
                 if (!neighbor) return;
     
-                // 国境のみを表示する設定の場合、異なる色のセル間のみ線を描画
                 if (showBordersOnly && cell.color === neighbor.color) {
-                    return; // 同じ色の隣接セル間には線を引かない
+                    return;
                 }
     
                 // 境界線の描画
@@ -747,7 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const start = points[i];
                     const end = points[(i + 1) % points.length];
     
-                    // 隣接セルの境界線のみ描画
                     if (isSharedEdge(cell, neighbor, start, end)) {
                         ctx.moveTo(start[0], start[1]);
                         ctx.lineTo(end[0], end[1]);
@@ -759,35 +813,39 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     
-        // 特殊セル（首都・都市の枠線）の描画
+        // 特殊セル（首都・都市・同盟枠線）の描画
         cells.forEach(cell => {
             if (capitals.has(cell)) {
                 // 首都セルを赤枠で描画
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = 'red';
-                ctx.beginPath();
-                ctx.moveTo(cell.points[0][0], cell.points[0][1]);
-                for (let i = 1; i < cell.points.length; i++) {
-                    ctx.lineTo(cell.points[i][0], cell.points[i][1]);
-                }
-                ctx.closePath();
-                ctx.stroke();
             } else if (cities.includes(cell)) {
                 // 都市セルを青枠で描画
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = 'blue';
-                ctx.beginPath();
-                ctx.moveTo(cell.points[0][0], cell.points[0][1]);
-                for (let i = 1; i < cell.points.length; i++) {
-                    ctx.lineTo(cell.points[i][0], cell.points[i][1]);
-                }
-                ctx.closePath();
-                ctx.stroke();
+            } else if (alliances.has(cell.color)) {
+                // 同盟セルに特別な枠を描画
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = getAllianceColor(cell.color);
+            } else {
+                // 通常のセルは黒枠
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'black';
             }
+    
+            // 枠線を描画
+            ctx.beginPath();
+            ctx.moveTo(cell.points[0][0], cell.points[0][1]);
+            for (let i = 1; i < cell.points.length; i++) {
+                ctx.lineTo(cell.points[i][0], cell.points[i][1]);
+            }
+            ctx.closePath();
+            ctx.stroke();
         });
     
         ctx.restore();
     }
+    
     
     function addMapLog(color, message, defenderColor = null) {
         // 白色のログは無視
