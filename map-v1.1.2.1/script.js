@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         large: { numCells: 1000, mergeIterations: 0, tickInterval: 75 },
         dense: { numCells: 2000, mergeIterations: 0, tickInterval: 75 },
         test: { numCells: 5000, mergeIterations: 0, tickInterval: 25 },
-        test2: { numCells: 10000, mergeIterations: 0, tickInterval: 25 }
+        test2: { numCells: 10000, mergeIterations: 0, tickInterval: 1 }
     };
 
     document.getElementById('cityToggle').addEventListener('change', toggleModifiedWeightedOption);
@@ -133,7 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 現在の設定を取得して地図を再生成
             applySpecialGeneration('battleRoyale')
             console.log(`applyPreset called with preset: ${presetName}`);
-
+            autoMergeRunning = true;
+            const tickInterval = parseInt(document.getElementById('tickInterval').value);
+            autoMergeLoop(tickInterval);
         }
         else
         {
