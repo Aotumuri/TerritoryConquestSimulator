@@ -85,6 +85,7 @@
                     <option value="combined">重み付き多数決吸収</option>
                     <option value="modified-weighted" id="modifiedWeightedOption" >修正重みつき吸収</option>
                     <option value="global-modified-weighted" id="modifiedWeightedOption" >全体修正重みつき吸収</option>
+                    <option value="custom-weighted" id="modifiedWeightedOption" >分配修正全体重み付き吸収</option>
                 </select><br>
 
                 <br>
@@ -111,6 +112,24 @@
                     <h3>地図ログ</h3>
                     <ul id="logList"></ul>
                 </div>
+                <br>
+                <div id="colorAdjacencyRanking">
+                    <h3>接している色ランキング</h3>
+                    <table id="adjacencyTable" border="1">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>色</th>
+                                <th>接している色数</th>
+                                <th>隣接色</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- ランキングデータがここに挿入されます -->
+                        </tbody>
+                    </table>
+                </div>
+                
                 <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
             </div>
 
@@ -140,7 +159,7 @@
             </div>
 
             <!-- バージョン表示 -->
-            <div id="versionLabel">陣取り合戦シミュレータ v1.1.1<br>by ChatGPT & Aotumuri</div>
+            <div id="versionLabel">陣取り合戦シミュレータ v1.1.2<br>by ChatGPT & Aotumuri</div>
         </div>
     </div>
 

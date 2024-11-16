@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
 
     let showBordersOnly = false; // 初期設定はオフ
+    let globalSortedColors = []; // グローバル変数として定義
+
 
     // チェックボックスの設定イベントリスナー
     document.getElementById('showBordersOnlyToggle').addEventListener('change', (e) => {
@@ -204,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateColorRanking();
                 drawCells();
                 lastTick = timestamp;
+                updateColorAdjacencyRanking(10);
             }
             autoMergeLoop(tickInterval);
         });
@@ -406,8 +409,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCapitalEnabled = document.getElementById('capitalToggle').checked;
 
         // 孤立しているかの判定
-        const isIsolated = !neighborColors.includes(selfColor);
+        // const isIsolated = !neighborColors.includes(selfColor);
+        if (pattern === 'custom-weighted') {
+            const selfColorCount = colorCounts[selfColor] || 0;
+            // colorCounts から最も頻度の高い色を取得
+            let dominantColor = Object.keys(colorCounts).reduce((a, b) =>
+                colorCounts[a] > colorCounts[b] ? a : b
+            );
+            // dominantColor が selfColor と同じ場合、50%の確率で colorCounts のランダムな色を選択
+            if (dominantColor === selfColor) {
+                if (Math.random() < 0.75) {
+                    const colors = Object.keys(colorCounts);
+                    // ランダムに colorCounts のキー（色）を選択
+                    dominantColor = colors[Math.floor(Math.random() * colors.length)];
+                }
+            }
 
+            if(selfColorCount == dominantColor)
+            {
+                return selfColor;
+            }
+            else
+            {
+                // 自分自身が接している色の数
+
+                const selfDiversity = globalSortedColors[selfColor]?.length * 10|| 1; // 自分の隣接色の数
+                const dominantDiversity = globalSortedColors[dominantColor]?.length * 10|| 1; // 相手の隣接色の数
+                
+                // console.log(`隣接色（自分）: ${selfDiversity}, 隣接色（敵）: ${dominantDiversity}`);
+
+                // グローバルカウントを取得
+                const selfGlobalCount = (colorCount[selfColor] || 0) / selfDiversity;
+                const dominantGlobalCount = (colorCount[dominantColor] || 0) / dominantDiversity;
+        
+                const totalDifferenceFactor = dominantGlobalCount / (selfGlobalCount + 1);
+                // console.log(`selfGlobalCount: ${selfGlobalCount}, dominantGlobalCount: ${dominantGlobalCount}`);
+                // console.log(`selfColor: ${selfColor} (count: ${selfGlobalCount}), dominantColor: ${dominantColor} (count: ${dominantGlobalCount})`);
+                // console.log(`Total Difference Factor: ${totalDifferenceFactor}`);
+
+                if (Math.random() < Math.pow(totalDifferenceFactor, 1.2) / 3) {
+                    return dominantColor;
+                }
+        
+                if (Math.random() < selfColorCount / totalWeight) {
+                    return selfColor;
+                }
+        
+                return neighborColors.find(c => Math.random() < colorCounts[c] / totalWeight);
+            }
+        }
         // 孤立している場合は他の色に吸収されやすくする
         // if (isIsolated) {
         //     return neighborColors.find(c => Math.random() < (colorCounts[c] / totalWeight) * 1.5);
@@ -503,7 +553,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // デフォルトでランダム
         return neighborColors[Math.floor(Math.random() * neighborColors.length)];
     }
-
     
     // 隣接セルの色を取得
     function getNeighborColors(cell, merged) {
@@ -975,6 +1024,99 @@ window.applySpecialGeneration = applySpecialGeneration;
         canvas.height = window.innerHeight;
         drawCells(); // キャンバスサイズ変更後に再描画
     }
+
+    function updateColorAdjacencyRanking(limit) {
+        const adjacencyList = generateColorAdjacencyList(); // 隣接色リストを生成
+        console.log("Adjacency List:", adjacencyList); // 隣接リストの確認
+    
+        const sortedColors = sortColorsByAdjacency(adjacencyList); // 隣接色が多い順に並べ替え
+        console.log("Sorted Colors:", sortedColors); // ソート後の確認
+    
+        // グローバル変数に保存
+        globalSortedColors = adjacencyList; // 隣接リストそのものを保存
+    
+        const tableBody = document.getElementById('adjacencyTable').querySelector('tbody');
+        tableBody.innerHTML = ''; // テーブルの中身をリセット
+    
+        // 上位指定数をHTMLに追加
+        sortedColors.slice(0, limit).forEach((entry, index) => {
+            const row = document.createElement('tr');
+    
+            // 順位
+            const rankCell = document.createElement('td');
+            rankCell.textContent = index + 1;
+            row.appendChild(rankCell);
+    
+            // 色
+            const colorCell = document.createElement('td');
+            colorCell.textContent = entry.color;
+            colorCell.style.backgroundColor = entry.color; // 背景色として色を表示
+            row.appendChild(colorCell);
+    
+            // 接している色数
+            const countCell = document.createElement('td');
+            countCell.textContent = entry.count;
+            row.appendChild(countCell);
+    
+            // 隣接色
+            const neighborsCell = document.createElement('td');
+            neighborsCell.textContent = entry.neighbors.join(', ');
+            row.appendChild(neighborsCell);
+    
+            tableBody.appendChild(row);
+        });
+    }
+    
+    
+    function generateColorAdjacencyList() {
+        const adjacencyList = {}; // 色ごとの隣接色リスト
+    
+        cells.forEach(cell => {
+            if (cell.color === WHITE_COLOR) return;
+    
+            const neighbors = getNeighbors(cell);
+            neighbors.forEach(neighborIndex => {
+                const neighborColor = cells[neighborIndex]?.color;
+    
+                if (!neighborColor || neighborColor === WHITE_COLOR || neighborColor === cell.color) {
+                    return;
+                }
+    
+                if (!adjacencyList[cell.color]) {
+                    adjacencyList[cell.color] = new Set();
+                }
+                adjacencyList[cell.color].add(neighborColor);
+            });
+        });
+    
+        // SetをArrayに変換
+        Object.keys(adjacencyList).forEach(color => {
+            adjacencyList[color] = Array.from(adjacencyList[color]);
+        });
+    
+        return adjacencyList;
+    }
+    function sortColorsByAdjacency(adjacencyList) {
+        const sortedColors = Object.entries(adjacencyList)
+            .map(([color, neighbors]) => ({
+                color,
+                neighbors,
+                count: neighbors.length
+            }))
+            .sort((a, b) => b.count - a.count); // 降順にソート
+    
+        return sortedColors;
+    }
+    function getNeighbors(cell) {
+        const neighbors = [];
+        cell.neighbors.forEach(neighborIndex => {
+            if (neighborIndex >= 0 && neighborIndex < cells.length) {
+                neighbors.push(neighborIndex);
+            }
+        });
+        return neighbors;
+    }
+        
     
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas(); // 初期化時にもキャンバスサイズを設定
@@ -982,4 +1124,6 @@ window.applySpecialGeneration = applySpecialGeneration;
     // 初期地図の生成
     generateAndDrawMap(100, 0);
     centerMap();
+
+    updateColorAdjacencyRanking(10);
 });
