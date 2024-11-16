@@ -131,13 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             showBordersOnly = document.getElementById('showBordersOnlyToggle').checked
             // 現在の設定を取得して地図を再生成
+            applySpecialGeneration('battleRoyale')
+            console.log(`applyPreset called with preset: ${presetName}`);
+
+        }
+        else
+        {
+            showBordersOnly = document.getElementById('showBordersOnlyToggle').checked
+            // 現在の設定を取得して地図を再生成
             const numCells = parseInt(document.getElementById('numCells').value);
             const mergeIterations = parseInt(document.getElementById('mergeIterations').value);
             generateAndDrawMap(numCells, mergeIterations);
             console.log(`applyPreset called with preset: ${presetName}`);
-        }else
-        {
-            applySpecialGeneration('battleRoyale')
         }
     };
     
