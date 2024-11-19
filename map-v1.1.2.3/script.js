@@ -796,11 +796,22 @@ window.applySpecialGeneration = applySpecialGeneration;
     // ズーム機能（ホイール操作およびピンチ操作）
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const zoomAmount = e.deltaY * -0.001; 
-        scale += zoomAmount;
-        scale = Math.min(Math.max(0.5, scale), 3); // ズーム範囲を制限
+        const zoomAmount = e.deltaY * -0.001;
+        const zoomFactor = Math.min(Math.max(0.5, scale + zoomAmount), 3) / scale;
+    
+        // マウス座標を取得
+        const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+        const mouseY = e.clientY - canvas.getBoundingClientRect().top;
+    
+        // ズームの中心を計算
+        origin.x -= (mouseX - origin.x) * (zoomFactor - 1);
+        origin.y -= (mouseY - origin.y) * (zoomFactor - 1);
+    
+        // ズーム倍率を更新
+        scale = Math.min(Math.max(0.5, scale + zoomAmount), 3);
         drawCells();
     });
+    
 
     // タッチズーム（ピンチ）対応
     let lastDistance = null;
@@ -1193,7 +1204,7 @@ window.applySpecialGeneration = applySpecialGeneration;
     //     });
     // }
     document.getElementById('setMultiplierButton').addEventListener('click', () => {
-        const color = document.getElementById('multiplierColorPicker').value;
+        const color = document.getElementById('colorPicker').value;
         const multiplier = parseFloat(document.getElementById('multiplierInput').value);
     
         if (isNaN(multiplier) || multiplier < 0) {
@@ -1205,41 +1216,70 @@ window.applySpecialGeneration = applySpecialGeneration;
         alert(`色 ${color} の倍率を ${multiplier} に設定しました。`);
     });
     
-    canvas.addEventListener('click', (event) => {
-        const rect = canvas.getBoundingClientRect(); // キャンバスのCSSサイズと位置を取得
-        const devicePixelRatio = window.devicePixelRatio || 1; // デバイスのピクセル密度
-    
-        // マウスのクリック位置をキャンバスのCSS座標系に変換
-        const cssX = (event.clientX - rect.left); // CSS上のX座標
-        const cssY = (event.clientY - rect.top);  // CSS上のY座標
-    
-        // キャンバス内の実際の描画座標に変換
-        const canvasX = cssX * devicePixelRatio; // 実際のX座標
-        const canvasY = cssY * devicePixelRatio; // 実際のY座標
-    
-        // 地図上の座標に変換（ズーム・パンを考慮）
-        const mapX = (canvasX - origin.x) / scale; // 地図上のX座標
-        const mapY = (canvasY - origin.y) / scale; // 地図上のY座標
-    
-        console.log(`クリック座標 (地図上): (${mapX.toFixed(2)}, ${mapY.toFixed(2)})`);
-    
-        // 対応するセルを検索
-        const clickedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
-    
-        if (clickedCell) {
-            const clickedColor = clickedCell.color; // セルの色を取得
-            console.log(`クリックしたセルの色: ${clickedColor}`);
-    
-            // カラーピッカーに色を反映
-            const colorPicker = document.getElementById('multiplierColorPicker');
-            if (colorPicker) {
-                colorPicker.value = rgbToHex(clickedColor); // 色をカラーピッカーに設定
-            }
-        } else {
-            console.log('セルが見つかりませんでした。');
+// 現在選択中のセルを保持
+let selectedCell = null;
+
+// クリックイベントでセルを選択し、カラーピッカーに反映
+canvas.addEventListener('click', (event) => {
+    const rect = canvas.getBoundingClientRect();
+
+    // マウスクリック位置を取得（CSSピクセル座標系）
+    const cssX = event.clientX - rect.left;
+    const cssY = event.clientY - rect.top;
+
+    // キャンバスの描画座標系に変換
+    const mapX = (cssX - origin.x) / scale;
+    const mapY = (cssY - origin.y) / scale;
+
+    console.log(`クリック座標 (地図座標系): (${mapX.toFixed(2)}, ${mapY.toFixed(2)})`);
+
+    // 該当するセルを検索
+    selectedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
+
+    if (selectedCell) {
+        console.log(`選択したセルの色: ${selectedCell.color}`);
+        // カラーピッカーにセルの色を反映
+        const colorPicker = document.getElementById('colorPicker');
+        if (colorPicker) {
+            colorPicker.value = rgbToHex(selectedCell.color); // RGBを16進数に変換して設定
         }
-    });
+        // セルを強調表示
+        // highlightCell(selectedCell, ctx);
+    } else {
+        console.log('クリック位置にセルが見つかりませんでした。');
+    }
+});
+
+// カラーピッカーの値が変更されたときにセルの色を更新
+const colorPicker = document.getElementById('colorPicker');
+colorPicker.addEventListener('input', (event) => {
+    if (selectedCell) {
+        // セルの色をカラーピッカーの色に変更
+        selectedCell.color = event.target.value;
+        console.log(`セルの色を ${selectedCell.color} に変更しました`);
+        drawCells(); // 色変更後に再描画
+    }
+});
     
+    function highlightCell(cell, context) {
+        context.save();
+        context.translate(origin.x, origin.y); // パンの適用
+        context.scale(scale, scale); // ズームの適用
+    
+        context.lineWidth = 3 / scale; // ズームに応じた線の太さ
+        context.strokeStyle = 'red';
+    
+        context.beginPath();
+        const points = cell.points;
+        context.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; i++) {
+            context.lineTo(points[i][0], points[i][1]);
+        }
+        context.closePath();
+        context.stroke();
+    
+        context.restore();
+    }
     
     // ポリゴン内部判定
     function isPointInsidePolygon(x, y, points) {
@@ -1253,7 +1293,7 @@ window.applySpecialGeneration = applySpecialGeneration;
             if (intersect) inside = !inside;
         }
         return inside;
-    }    
+    }     
     
     // RGB値をHexコードに変換
     function rgbToHex(color) {
