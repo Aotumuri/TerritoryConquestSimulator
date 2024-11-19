@@ -722,8 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 // Special Generation Function without resetting cells
 function applySpecialGeneration(type) {
+    expansionMultipliers=[];
     const numCells = parseInt(document.getElementById('numCells').value);
-
     // セルが生成されていない場合のみ、新規に生成する
     if (!cells || cells.length === 0 || cells.length !== numCells) {
         cells = generateVoronoiCells(numCells, canvas.width, canvas.height);
@@ -1151,7 +1151,7 @@ window.applySpecialGeneration = applySpecialGeneration;
     
     function generateColorAdjacencyList() {
         const adjacencyList = {}; // 色ごとの隣接色リスト
-    
+        expansionMultipliers=[];
         cells.forEach(cell => {
             if (cell.color === WHITE_COLOR) return;
     
