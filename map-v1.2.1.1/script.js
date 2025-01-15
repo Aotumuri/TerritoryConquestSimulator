@@ -18,10 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cityRequirementContainer = document.getElementById('cityRequirementContainer');
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
     const saveLoadModal = document.getElementById('saveLoadModal');
-    const saveToCacheButton = document.getElementById('saveToCache');
-    const saveToFileButton = document.getElementById('saveToFile');
-    const loadFromCacheButton = document.getElementById('loadFromCache');
-    const loadFromFileButton = document.getElementById('loadFromFile');
     const closeModalButton = document.getElementById('closeModal');
 
     let showBordersOnly = false; // 初期設定はオフ
@@ -217,40 +213,117 @@ document.getElementById('saveloadMapButton').addEventListener('click', showSaveL
 // 閉じるボタンでモーダルを閉じる
 closeModalButton.addEventListener('click', closeSaveLoadModal);
 
-// キャッシュにセーブ
-saveToCacheButton.addEventListener('click', () => {
-    const mapData = JSON.stringify(cells);
-    localStorage.setItem('savedMap', mapData);
-    alert('地図データがキャッシュに保存されました！');
+// 地図と設定をキャッシュに保存
+document.getElementById('saveToCache').addEventListener('click', () => {
+    const settings = {
+        numCells: document.getElementById('numCells').value,
+        mergeIterations: document.getElementById('mergeIterations').value,
+        tickInterval: document.getElementById('tickInterval').value,
+        absorptionPattern: absorptionPatternSelect.value,
+        capitalToggle: capitalToggle.checked,
+        cityToggle: cityToggle.checked,
+        randomAbsorptionToggle: randomAbsorptionToggle.checked,
+        cityRequirement: document.getElementById('cityRequirement').value,
+        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked // 新規追加
+    };
+
+    const mapData = {
+        cells: cells,
+        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+            cellIndex: cells.indexOf(cell),
+            color
+        })),
+        cities: cities.map(city => cells.indexOf(city)),
+        settings: settings
+    };
+
+    localStorage.setItem('savedMapAndSettings', JSON.stringify(mapData));
+    alert('地図と設定がキャッシュに保存されました！');
     closeSaveLoadModal();
 });
 
-// ファイルにセーブ
-saveToFileButton.addEventListener('click', () => {
-    const mapData = JSON.stringify(cells);
-    const blob = new Blob([mapData], { type: 'application/json' });
+// 地図と設定をファイルに保存
+document.getElementById('saveToFile').addEventListener('click', () => {
+    const settings = {
+        numCells: document.getElementById('numCells').value,
+        mergeIterations: document.getElementById('mergeIterations').value,
+        tickInterval: document.getElementById('tickInterval').value,
+        absorptionPattern: absorptionPatternSelect.value,
+        capitalToggle: capitalToggle.checked,
+        cityToggle: cityToggle.checked,
+        randomAbsorptionToggle: randomAbsorptionToggle.checked,
+        cityRequirement: document.getElementById('cityRequirement').value,
+        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked // 新規追加
+    };
+
+    const mapData = {
+        cells: cells,
+        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+            cellIndex: cells.indexOf(cell),
+            color
+        })),
+        cities: cities.map(city => cells.indexOf(city)),
+        settings: settings
+    };
+
+    const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'TCS-MapData.json';
+    link.download = 'TCS-MapAndSettings.json';
     link.click();
     closeSaveLoadModal();
 });
 
+
 // キャッシュからロード
-loadFromCacheButton.addEventListener('click', () => {
-    const savedMap = localStorage.getItem('savedMap');
-    if (savedMap) {
-        cells = JSON.parse(savedMap);
-        drawCells();
-        alert('キャッシュから地図データをロードしました！');
+document.getElementById('loadFromCache').addEventListener('click', () => {
+    const savedData = localStorage.getItem('savedMapAndSettings');
+    if (savedData) {
+        try {
+            const mapData = JSON.parse(savedData);
+
+            // 地図データのロード
+            cells = mapData.cells;
+
+            // 首都データの復元
+            capitals.clear();
+            mapData.capitals.forEach(({ cellIndex, color }) => {
+                if (cells[cellIndex]) {
+                    capitals.set(cells[cellIndex], color);
+                }
+            });
+
+            // 都市データの復元
+            cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
+
+            // 設定のロード
+            const settings = mapData.settings;
+            document.getElementById('numCells').value = settings.numCells;
+            document.getElementById('mergeIterations').value = settings.mergeIterations;
+            document.getElementById('tickInterval').value = settings.tickInterval;
+            absorptionPatternSelect.value = settings.absorptionPattern;
+            capitalToggle.checked = settings.capitalToggle;
+            cityToggle.checked = settings.cityToggle;
+            randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
+            document.getElementById('cityRequirement').value = settings.cityRequirement;
+            document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly; // 新規追加
+
+            // 地図の再描画
+            showBordersOnly = settings.showBordersOnly; // 再描画前に状態を反映
+            drawCells();
+
+            alert('地図と設定がキャッシュからロードされました！');
+        } catch (e) {
+            alert('キャッシュからの読み込みに失敗しました。');
+        }
     } else {
-        alert('キャッシュに保存された地図データがありません。');
+        alert('キャッシュに保存された地図と設定が見つかりません。');
     }
     closeSaveLoadModal();
 });
 
 // ファイルからロード
-loadFromFileButton.addEventListener('click', () => {
+document.getElementById('loadFromFile').addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -259,9 +332,39 @@ loadFromFileButton.addEventListener('click', () => {
         const reader = new FileReader();
         reader.onload = () => {
             try {
-                cells = JSON.parse(reader.result);
+                const mapData = JSON.parse(reader.result);
+
+                // 地図データのロード
+                cells = mapData.cells;
+
+                // 首都データの復元
+                capitals.clear();
+                mapData.capitals.forEach(({ cellIndex, color }) => {
+                    if (cells[cellIndex]) {
+                        capitals.set(cells[cellIndex], color);
+                    }
+                });
+
+                // 都市データの復元
+                cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
+
+                // 設定のロード
+                const settings = mapData.settings;
+                document.getElementById('numCells').value = settings.numCells;
+                document.getElementById('mergeIterations').value = settings.mergeIterations;
+                document.getElementById('tickInterval').value = settings.tickInterval;
+                absorptionPatternSelect.value = settings.absorptionPattern;
+                capitalToggle.checked = settings.capitalToggle;
+                cityToggle.checked = settings.cityToggle;
+                randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
+                document.getElementById('cityRequirement').value = settings.cityRequirement;
+                document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly; // 新規追加
+
+                // 地図の再描画
+                showBordersOnly = settings.showBordersOnly; // 再描画前に状態を反映
                 drawCells();
-                alert('ファイルから地図データをロードしました！');
+
+                alert('地図と設定がロードされました！');
             } catch (e) {
                 alert('ファイルの読み込みに失敗しました。');
             }
@@ -271,6 +374,8 @@ loadFromFileButton.addEventListener('click', () => {
     input.click();
     closeSaveLoadModal();
 });
+
+
 
 // 背景クリックでモーダルを閉じる
 window.addEventListener('click', (event) => {
