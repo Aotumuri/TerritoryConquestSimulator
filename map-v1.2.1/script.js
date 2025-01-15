@@ -231,7 +231,7 @@ saveToFileButton.addEventListener('click', () => {
     const blob = new Blob([mapData], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'mapData.json';
+    link.download = 'TCS-MapData.json';
     link.click();
     closeSaveLoadModal();
 });
