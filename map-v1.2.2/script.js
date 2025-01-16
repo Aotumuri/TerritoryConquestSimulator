@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
         showBordersOnly = e.target.checked;
         drawCells(); // 設定変更後に再描画
     });
+
+    // 標高表示の切り替え
+    const elevationToggle = document.getElementById('elevationToggle');
+    elevationToggle.addEventListener('change', () => {
+        drawCells();
+    });
+
     // チェックボックスの変更に応じて表示・非表示を切り替え
     cityToggle.addEventListener('change', () => {
         if (cityToggle.checked) {
@@ -492,20 +499,72 @@ window.addEventListener('click', (event) => {
             x: Math.random() * width,
             y: Math.random() * height
         }));
+    
         const delaunay = d3.Delaunay.from(points.map(p => [p.x, p.y]));
         const voronoi = delaunay.voronoi([0, 0, width, height]);
-
-        return points.map((_, i) => {
+    
+        // ノイズマップの生成
+        const noiseWidth = 50; // ノイズ領域の横幅
+        const noiseHeight = 50; // ノイズ領域の高さ
+        const noiseMap = generateNoiseMap(width, height, noiseWidth, noiseHeight, 0.05);
+    
+        const cells = points.map((_, i) => {
             const cell = voronoi.cellPolygon(i);
             const selectedColor = getRandomColor();
             return cell ? {
                 points: closeGaps(cell),
                 color: selectedColor,
-                neighbors: Array.from(delaunay.neighbors(i))
+                neighbors: Array.from(delaunay.neighbors(i)),
+                elevation: 0,          // 初期値
+                elevationColor: null,  // 初期値
             } : null;
         }).filter(cell => cell);
+    
+        // セルに標高データと色を割り当てる
+        assignElevationAndColorToCells(cells, noiseMap, width, height);
+    
+        return cells;
     }
+    
+    function assignElevationAndColorToCells(cells, noiseMap, canvasWidth, canvasHeight) {
+        cells.forEach(cell => {
+            // セルの重心座標を計算
+            const centroid = cell.points.reduce(
+                (acc, [x, y]) => {
+                    acc.x += x;
+                    acc.y += y;
+                    return acc;
+                },
+                { x: 0, y: 0 }
+            );
+    
+            centroid.x /= cell.points.length;
+            centroid.y /= cell.points.length;
+    
+            // ノイズマップから標高値を取得
+            const gridX = Math.floor((centroid.x / canvasWidth) * noiseMap[0].length);
+            const gridY = Math.floor((centroid.y / canvasHeight) * noiseMap.length);
+            const elevation = noiseMap[gridY][gridX];
+    
+            // 標高をセルに保存
+            cell.elevation = elevation;
+    
+            // 標高に基づく色を計算して保存
+            cell.elevationColor = elevationToColor(elevation);
+        });
+    }
+    
 
+    function elevationToColor(elevation) {
+        // 標高値をグレーの濃さに変換
+        const grayValue = Math.floor(255 * (1 - elevation)); // 255 (白) 〜 0 (黒) にスケーリング
+        const color = `rgb(${grayValue}, ${grayValue}, ${grayValue})`; // グレースケール
+        // console.log(`Elevation: ${elevation}, Color: ${color}`); // 色のログを確認
+        return color;
+    }
+    
+    
+    
     // 画面外に出ないようセルの端を調整
     function closeGaps(points) {
         return points.map(([x, y]) => [
@@ -1081,10 +1140,6 @@ window.applySpecialGeneration = applySpecialGeneration;
         
     // drawCells関数を更新してズームとドラッグを反映
     function drawCells() {
-        //設定系
-        toggleModifiedWeightedOption();
-
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
     
@@ -1092,17 +1147,35 @@ window.applySpecialGeneration = applySpecialGeneration;
         ctx.translate(origin.x, origin.y);
         ctx.scale(scale, scale);
     
-        // 全セルを塗りつぶして表示
-        cells.forEach(cell => {
-            ctx.fillStyle = cell.color;
-            ctx.beginPath();
-            ctx.moveTo(cell.points[0][0], cell.points[0][1]);
-            for (let i = 1; i < cell.points.length; i++) {
-                ctx.lineTo(cell.points[i][0], cell.points[i][1]);
-            }
-            ctx.closePath();
-            ctx.fill();
-        });
+        const useElevation = document.getElementById('elevationToggle').checked;
+    
+ // 1. 標高を背景に描画
+ if (useElevation) {
+    cells.forEach(cell => {
+        ctx.fillStyle = cell.elevationColor; // 保存された色を使用
+        ctx.beginPath();
+        ctx.moveTo(cell.points[0][0], cell.points[0][1]);
+        for (let i = 1; i < cell.points.length; i++) {
+            ctx.lineTo(cell.points[i][0], cell.points[i][1]);
+        }
+        ctx.closePath();
+        ctx.fill();
+    });
+}
+
+// 2. 半透明でセルの色を重ねる
+ctx.globalAlpha = 0.5; // 半透明度を設定
+cells.forEach(cell => {
+    ctx.fillStyle = cell.color; // セルの色を設定
+    ctx.beginPath();
+    ctx.moveTo(cell.points[0][0], cell.points[0][1]);
+    for (let i = 1; i < cell.points.length; i++) {
+        ctx.lineTo(cell.points[i][0], cell.points[i][1]);
+    }
+    ctx.closePath();
+    ctx.fill();
+});
+ctx.globalAlpha = 1.0; // 透明度をリセット
     
         // 国境線の描画（異なる色のセル間の境界のみ）
         cells.forEach(cell => {
@@ -1110,19 +1183,13 @@ window.applySpecialGeneration = applySpecialGeneration;
                 const neighbor = cells[neighborIndex];
                 if (!neighbor) return;
     
-                // 国境のみを表示する設定の場合、異なる色のセル間のみ線を描画
-                if (showBordersOnly && cell.color === neighbor.color) {
-                    return; // 同じ色の隣接セル間には線を引かない
-                }
+                if (showBordersOnly && cell.color === neighbor.color) return;
     
-                // 境界線の描画
                 ctx.beginPath();
                 const points = cell.points;
                 for (let i = 0; i < points.length; i++) {
                     const start = points[i];
                     const end = points[(i + 1) % points.length];
-    
-                    // 隣接セルの境界線のみ描画
                     if (isSharedEdge(cell, neighbor, start, end)) {
                         ctx.moveTo(start[0], start[1]);
                         ctx.lineTo(end[0], end[1]);
@@ -1137,7 +1204,6 @@ window.applySpecialGeneration = applySpecialGeneration;
         // 特殊セル（首都・都市の枠線）の描画
         cells.forEach(cell => {
             if (capitals.has(cell)) {
-                // 首都セルを赤枠で描画
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = 'red';
                 ctx.beginPath();
@@ -1148,7 +1214,6 @@ window.applySpecialGeneration = applySpecialGeneration;
                 ctx.closePath();
                 ctx.stroke();
             } else if (cities.includes(cell)) {
-                // 都市セルを青枠で描画
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = 'blue';
                 ctx.beginPath();
@@ -1404,6 +1469,64 @@ window.applySpecialGeneration = applySpecialGeneration;
         expansionMultipliers[color] = multiplier; // 倍率を更新
         alert(`色 ${color} の倍率を ${multiplier} に設定しました。`);
     });
+
+    function generateNoiseMap(mapWidth, mapHeight, noiseWidth = 50, noiseHeight = 50, scale = 0.05) {
+        const simplex = new SimplexNoise();
+        const noiseMap = [];
+    
+        // 小さなノイズ領域を生成
+        for (let y = 0; y < noiseHeight; y++) {
+            const row = [];
+            for (let x = 0; x < noiseWidth; x++) {
+                const noiseValue = simplex.noise2D(x * scale, y * scale);
+                const normalizedValue = (noiseValue + 1) / 2; // 0〜1に正規化
+                row.push(normalizedValue);
+            }
+            noiseMap.push(row);
+        }
+    
+        // マップの幅・高さに合わせてスケーリング
+        const scaledNoiseMap = [];
+        for (let y = 0; y < mapHeight; y++) {
+            const row = [];
+            for (let x = 0; x < mapWidth; x++) {
+                // ノイズ領域をスケールしてアクセス
+                const noiseX = Math.floor((x / mapWidth) * noiseWidth);
+                const noiseY = Math.floor((y / mapHeight) * noiseHeight);
+                row.push(noiseMap[noiseY][noiseX]);
+            }
+            scaledNoiseMap.push(row);
+        }
+    
+        return scaledNoiseMap;
+    }
+    
+    
+
+    function assignElevationToCells(cells, noiseMap, canvasWidth, canvasHeight) {
+        cells.forEach(cell => {
+            // セルの重心座標を計算
+            const centroid = cell.points.reduce(
+                (acc, [x, y]) => {
+                    acc.x += x;
+                    acc.y += y;
+                    return acc;
+                },
+                { x: 0, y: 0 }
+            );
+    
+            centroid.x /= cell.points.length;
+            centroid.y /= cell.points.length;
+    
+            // ノイズマップから標高値を取得
+            const gridX = Math.floor((centroid.x / canvasWidth) * noiseMap[0].length);
+            const gridY = Math.floor((centroid.y / canvasHeight) * noiseMap.length);
+            cell.elevation = noiseMap[gridY][gridX];
+        });
+    }
+    
+
+    
     
 // 現在選択中のセルを保持
 let selectedCell = null;
