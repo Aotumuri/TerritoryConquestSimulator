@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
     const saveLoadModal = document.getElementById('saveLoadModal');
     const closeModalButton = document.getElementById('closeModal');
+    const elevationToggle = document.getElementById('elevationToggle');
 
     let showBordersOnly = false; // 初期設定はオフ
     let globalSortedColors = []; // グローバル変数として定義
@@ -31,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 標高表示の切り替え
-    const elevationToggle = document.getElementById('elevationToggle');
     elevationToggle.addEventListener('change', () => {
         drawCells();
     });
@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (randomAbsorptionEnabled && Math.random() < 0.1 || (absorptionPattern === 'random')) {
                 selectedColor = neighborColors[Math.floor(Math.random() * neighborColors.length)];
             } else {
-                selectedColor = selectColorByPattern(neighborColors, absorptionPattern, cell.color);
+                selectedColor = selectColorByPattern(neighborColors, absorptionPattern, cell.color, index);
             }
 
             if (selectedColor) {
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // selectColorByPattern：neighborColors, pattern, selfColorだけで動作するように変更
-    function selectColorByPattern(neighborColors, pattern, selfColor) {
+    function selectColorByPattern(neighborColors, pattern, selfColor, selfIndex) {
         if (!neighborColors.length) return null;
         // 隣接セルの色の出現頻度をカウント
         const colorCounts = neighborColors.reduce((acc, color) => {
@@ -699,6 +699,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     const colors = Object.keys(colorCounts);
                     // ランダムに colorCounts のキー（色）を選択
                     dominantColor = colors[Math.floor(Math.random() * colors.length)];
+                }
+            }
+
+            const neighborIndices = cells.neighbors || [];
+            if (elevationToggle) {
+                const selfElevation = cells[selfIndex]?.elevation || 0; // 現在のセルの標高
+                const neighborElevations = neighborIndices.map(i => cells[i]?.elevation || 0); // 隣接セルの標高
+                const dominantElevation = neighborElevations[neighborColors.indexOf(dominantColor)] || 0;
+            
+                // 標高差を計算
+                const elevationDifference = Math.abs(dominantElevation - selfElevation);
+            
+                // 標高差に基づいて優先度を調整
+                if (dominantElevation > selfElevation) {
+                    // 自分より高い場合、差が大きいほど優先度を強化
+                    colorCounts[dominantColor] *= 0.65 + elevationDifference; // 差が1なら2倍、0.5なら1.5倍
+                } else if (dominantElevation < selfElevation) {
+                    // 自分より低い場合、差が大きいほど優先度を弱化
+                    colorCounts[dominantColor] /= 0.65 + elevationDifference; // 差が1なら半減、0.5なら1.33倍
                 }
             }
 
@@ -1489,33 +1508,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return scaledNoiseMap;
     }
-
-
-
-    function assignElevationToCells(cells, noiseMap, canvasWidth, canvasHeight) {
-        cells.forEach(cell => {
-            // セルの重心座標を計算
-            const centroid = cell.points.reduce(
-                (acc, [x, y]) => {
-                    acc.x += x;
-                    acc.y += y;
-                    return acc;
-                },
-                { x: 0, y: 0 }
-            );
-
-            centroid.x /= cell.points.length;
-            centroid.y /= cell.points.length;
-
-            // ノイズマップから標高値を取得
-            const gridX = Math.floor((centroid.x / canvasWidth) * noiseMap[0].length);
-            const gridY = Math.floor((centroid.y / canvasHeight) * noiseMap.length);
-            cell.elevation = noiseMap[gridY][gridX];
-        });
-    }
-
-
-
 
     // 現在選択中のセルを保持
     let selectedCell = null;
