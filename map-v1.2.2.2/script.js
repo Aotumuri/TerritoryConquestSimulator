@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('randomAbsorptionToggle').checked = true;
             document.getElementById('absorptionPattern').value = 'custom-weighted';
             document.getElementById('showBordersOnlyToggle').checked = true;
+            document.getElementById('elevationToggle').checked = true;
         } else {
             // 他のプリセットを設定
             const preset = presets[presetName];
@@ -218,76 +219,152 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalButton.addEventListener('click', closeSaveLoadModal);
 
     // 地図と設定をキャッシュに保存
-    document.getElementById('saveToCache').addEventListener('click', () => {
-        const settings = {
-            numCells: document.getElementById('numCells').value,
-            mergeIterations: document.getElementById('mergeIterations').value,
-            tickInterval: document.getElementById('tickInterval').value,
-            absorptionPattern: absorptionPatternSelect.value,
-            capitalToggle: capitalToggle.checked,
-            cityToggle: cityToggle.checked,
-            randomAbsorptionToggle: randomAbsorptionToggle.checked,
-            cityRequirement: document.getElementById('cityRequirement').value,
-            showBordersOnly: document.getElementById('showBordersOnlyToggle').checked // 新規追加
-        };
+document.getElementById('saveToCache').addEventListener('click', () => {
+    const settings = {
+        numCells: document.getElementById('numCells').value,
+        mergeIterations: document.getElementById('mergeIterations').value,
+        tickInterval: document.getElementById('tickInterval').value,
+        absorptionPattern: absorptionPatternSelect.value,
+        capitalToggle: capitalToggle.checked,
+        cityToggle: cityToggle.checked,
+        randomAbsorptionToggle: randomAbsorptionToggle.checked,
+        cityRequirement: document.getElementById('cityRequirement').value,
+        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
+        elevationToggle: document.getElementById('elevationToggle').checked // 追加
+    };
 
-        const mapData = {
-            cells: cells,
-            capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
-                cellIndex: cells.indexOf(cell),
-                color
-            })),
-            cities: cities.map(city => cells.indexOf(city)),
-            settings: settings
-        };
+    const mapData = {
+        cells: cells.map(cell => ({
+            points: cell.points,
+            color: cell.color,
+            elevation: cell.elevation,
+            elevationColor: cell.elevationColor,
+            neighbors: cell.neighbors
+        })),
+        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+            cellIndex: cells.indexOf(cell),
+            color
+        })),
+        cities: cities.map(city => cells.indexOf(city)),
+        settings: settings
+    };
 
-        localStorage.setItem('savedMapAndSettings', JSON.stringify(mapData));
-        alert('地図と設定がキャッシュに保存されました！');
-        closeSaveLoadModal();
-    });
+    localStorage.setItem('savedMapAndSettings', JSON.stringify(mapData));
+    alert('地図と設定がキャッシュに保存されました！');
+    closeSaveLoadModal();
+});
+// 地図と設定をファイルに保存
+document.getElementById('saveToFile').addEventListener('click', () => {
+    const settings = {
+        numCells: document.getElementById('numCells').value,
+        mergeIterations: document.getElementById('mergeIterations').value,
+        tickInterval: document.getElementById('tickInterval').value,
+        absorptionPattern: absorptionPatternSelect.value,
+        capitalToggle: capitalToggle.checked,
+        cityToggle: cityToggle.checked,
+        randomAbsorptionToggle: randomAbsorptionToggle.checked,
+        cityRequirement: document.getElementById('cityRequirement').value,
+        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
+        elevationToggle: document.getElementById('elevationToggle').checked // 追加
+    };
 
-    // 地図と設定をファイルに保存
-    document.getElementById('saveToFile').addEventListener('click', () => {
-        const settings = {
-            numCells: document.getElementById('numCells').value,
-            mergeIterations: document.getElementById('mergeIterations').value,
-            tickInterval: document.getElementById('tickInterval').value,
-            absorptionPattern: absorptionPatternSelect.value,
-            capitalToggle: capitalToggle.checked,
-            cityToggle: cityToggle.checked,
-            randomAbsorptionToggle: randomAbsorptionToggle.checked,
-            cityRequirement: document.getElementById('cityRequirement').value,
-            showBordersOnly: document.getElementById('showBordersOnlyToggle').checked // 新規追加
-        };
+    const mapData = {
+        cells: cells.map(cell => ({
+            points: cell.points,
+            color: cell.color,
+            elevation: cell.elevation,
+            elevationColor: cell.elevationColor,
+            neighbors: cell.neighbors
+        })),
+        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+            cellIndex: cells.indexOf(cell),
+            color
+        })),
+        cities: cities.map(city => cells.indexOf(city)),
+        settings: settings
+    };
 
-        const mapData = {
-            cells: cells,
-            capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
-                cellIndex: cells.indexOf(cell),
-                color
-            })),
-            cities: cities.map(city => cells.indexOf(city)),
-            settings: settings
-        };
+    const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'TCS-MapAndSettings.json';
+    link.click();
+    closeSaveLoadModal();
+});
+// キャッシュからロード
+document.getElementById('loadFromCache').addEventListener('click', () => {
+    const savedData = localStorage.getItem('savedMapAndSettings');
+    if (savedData) {
+        try {
+            const mapData = JSON.parse(savedData);
 
-        const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'TCS-MapAndSettings.json';
-        link.click();
-        closeSaveLoadModal();
-    });
+            // 地図データのロード
+            cells = mapData.cells.map(cellData => ({
+                points: cellData.points,
+                color: cellData.color,
+                elevation: cellData.elevation,
+                elevationColor: cellData.elevationColor,
+                neighbors: cellData.neighbors
+            }));
 
+            // 首都データの復元
+            capitals.clear();
+            mapData.capitals.forEach(({ cellIndex, color }) => {
+                if (cells[cellIndex]) {
+                    capitals.set(cells[cellIndex], color);
+                }
+            });
 
-    // キャッシュからロード
-    document.getElementById('loadFromCache').addEventListener('click', () => {
-        const savedData = localStorage.getItem('savedMapAndSettings');
-        if (savedData) {
+            // 都市データの復元
+            cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
+
+            // 設定のロード
+            const settings = mapData.settings;
+            document.getElementById('numCells').value = settings.numCells;
+            document.getElementById('mergeIterations').value = settings.mergeIterations;
+            document.getElementById('tickInterval').value = settings.tickInterval;
+            absorptionPatternSelect.value = settings.absorptionPattern;
+            capitalToggle.checked = settings.capitalToggle;
+            cityToggle.checked = settings.cityToggle;
+            randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
+            document.getElementById('cityRequirement').value = settings.cityRequirement;
+            document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly;
+            document.getElementById('elevationToggle').checked = settings.elevationToggle; // 追加
+
+            // 地図の再描画
+            showBordersOnly = settings.showBordersOnly;
+            elevationToggle = settings.elevationToggle; // 状態を反映
+            drawCells();
+
+            alert('地図と設定がキャッシュからロードされました！');
+        } catch (e) {
+            alert('キャッシュからの読み込みに失敗しました。');
+        }
+    } else {
+        alert('キャッシュに保存された地図と設定が見つかりません。');
+    }
+    closeSaveLoadModal();
+});
+// ファイルからロード
+document.getElementById('loadFromFile').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
             try {
-                const mapData = JSON.parse(savedData);
+                const mapData = JSON.parse(reader.result);
 
                 // 地図データのロード
-                cells = mapData.cells;
+                cells = mapData.cells.map(cellData => ({
+                    points: cellData.points,
+                    color: cellData.color,
+                    elevation: cellData.elevation,
+                    elevationColor: cellData.elevationColor,
+                    neighbors: cellData.neighbors
+                }));
 
                 // 首都データの復元
                 capitals.clear();
@@ -310,75 +387,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 cityToggle.checked = settings.cityToggle;
                 randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
                 document.getElementById('cityRequirement').value = settings.cityRequirement;
-                document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly; // 新規追加
+                document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly;
+                document.getElementById('elevationToggle').checked = settings.elevationToggle; // 追加
 
                 // 地図の再描画
-                showBordersOnly = settings.showBordersOnly; // 再描画前に状態を反映
+                showBordersOnly = settings.showBordersOnly;
+                elevationToggle = settings.elevationToggle; // 状態を反映
                 drawCells();
 
-                alert('地図と設定がキャッシュからロードされました！');
+                alert('地図と設定がロードされました！');
             } catch (e) {
-                alert('キャッシュからの読み込みに失敗しました。');
+                alert('ファイルの読み込みに失敗しました。');
             }
-        } else {
-            alert('キャッシュに保存された地図と設定が見つかりません。');
-        }
-        closeSaveLoadModal();
+        };
+        reader.readAsText(file);
     });
-
-    // ファイルからロード
-    document.getElementById('loadFromFile').addEventListener('click', () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const mapData = JSON.parse(reader.result);
-
-                    // 地図データのロード
-                    cells = mapData.cells;
-
-                    // 首都データの復元
-                    capitals.clear();
-                    mapData.capitals.forEach(({ cellIndex, color }) => {
-                        if (cells[cellIndex]) {
-                            capitals.set(cells[cellIndex], color);
-                        }
-                    });
-
-                    // 都市データの復元
-                    cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
-
-                    // 設定のロード
-                    const settings = mapData.settings;
-                    document.getElementById('numCells').value = settings.numCells;
-                    document.getElementById('mergeIterations').value = settings.mergeIterations;
-                    document.getElementById('tickInterval').value = settings.tickInterval;
-                    absorptionPatternSelect.value = settings.absorptionPattern;
-                    capitalToggle.checked = settings.capitalToggle;
-                    cityToggle.checked = settings.cityToggle;
-                    randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
-                    document.getElementById('cityRequirement').value = settings.cityRequirement;
-                    document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly; // 新規追加
-
-                    // 地図の再描画
-                    showBordersOnly = settings.showBordersOnly; // 再描画前に状態を反映
-                    drawCells();
-
-                    alert('地図と設定がロードされました！');
-                } catch (e) {
-                    alert('ファイルの読み込みに失敗しました。');
-                }
-            };
-            reader.readAsText(file);
-        });
-        input.click();
-        closeSaveLoadModal();
-    });
-
+    input.click();
+    closeSaveLoadModal();
+});
 
 
     // 背景クリックでモーダルを閉じる
@@ -707,10 +733,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selfElevation = cells[selfIndex]?.elevation || 0; // 現在のセルの標高
                 const neighborElevations = neighborIndices.map(i => cells[i]?.elevation || 0); // 隣接セルの標高
                 const dominantElevation = neighborElevations[neighborColors.indexOf(dominantColor)] || 0;
-            
+
                 // 標高差を計算
                 const elevationDifference = Math.abs(dominantElevation - selfElevation);
-            
+
                 // 標高差に基づいて優先度を調整
                 if (dominantElevation > selfElevation) {
                     // 自分より高い場合、差が大きいほど優先度を強化
