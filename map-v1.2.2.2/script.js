@@ -202,14 +202,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    let autoMergeRunningFlg = false;
     // モーダルを表示する関数
     function showSaveLoadModal() {
         saveLoadModal.style.display = 'flex';
+        if(autoMergeRunning)
+        {
+            autoMergeRunning = false;
+            clearInterval(autoMergeInterval);
+            autoMergeInterval = null;
+            autoMergeRunningFlg = true;
+        }
     }
 
     // モーダルを閉じる関数
     function closeSaveLoadModal() {
         saveLoadModal.style.display = 'none';
+        if(autoMergeRunningFlg)
+        {
+            autoMergeRunning = true;
+            const tickInterval = parseInt(document.getElementById('tickInterval').value);
+            autoMergeLoop(tickInterval);
+            autoMergeRunningFlg = false;
+        }
     }
 
     // ボタンをクリックしてモーダルを表示
