@@ -598,8 +598,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
 
             // 標高に基づく色を計算して保存
             cell.elevationColor = elevationToColor(elevation);
-            
-            if(elevation <= oceanSlider)
+            if(elevation <= oceanSlider.value)
             {
                 cell.isWater = true;
             }
