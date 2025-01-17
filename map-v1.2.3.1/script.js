@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('closeModal');
     const elevationToggle = document.getElementById('elevationToggle');
     const waterToggle = document.getElementById('waterToggle');
+    const oceanSlider = document.getElementById('oceanSlider');
 
     let showBordersOnly = false; // 初期設定はオフ
     let globalSortedColors = []; // グローバル変数として定義
@@ -598,10 +599,10 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             // 標高に基づく色を計算して保存
             cell.elevationColor = elevationToColor(elevation);
             
-            // if(elevation <= 0.3)
-            // {
-            //     cell.isWater = true;
-            // }
+            if(elevation <= oceanSlider)
+            {
+                cell.isWater = true;
+            }
         });
     }
 
