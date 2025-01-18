@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('showBordersOnlyToggle').checked = true;
             document.getElementById('elevationToggle').checked = true;
             document.getElementById('waterToggle').checked = true;
+            document.getElementById('disableWaterCitiesToggle').checked = true;
         } else {
             // 他のプリセットを設定
             const preset = presets[presetName];
@@ -209,8 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // モーダルを表示する関数
     function showSaveLoadModal() {
         saveLoadModal.style.display = 'flex';
-        if(autoMergeRunning)
-        {
+        if (autoMergeRunning) {
             autoMergeRunning = false;
             clearInterval(autoMergeInterval);
             autoMergeInterval = null;
@@ -221,8 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // モーダルを閉じる関数
     function closeSaveLoadModal() {
         saveLoadModal.style.display = 'none';
-        if(autoMergeRunningFlg)
-        {
+        if (autoMergeRunningFlg) {
             autoMergeRunning = true;
             const tickInterval = parseInt(document.getElementById('tickInterval').value);
             autoMergeLoop(tickInterval);
@@ -237,143 +236,84 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalButton.addEventListener('click', closeSaveLoadModal);
 
     // 地図と設定をキャッシュに保存
-document.getElementById('saveToCache').addEventListener('click', () => {
-    const settings = {
-        numCells: document.getElementById('numCells').value,
-        mergeIterations: document.getElementById('mergeIterations').value,
-        tickInterval: document.getElementById('tickInterval').value,
-        absorptionPattern: absorptionPatternSelect.value,
-        capitalToggle: capitalToggle.checked,
-        cityToggle: cityToggle.checked,
-        randomAbsorptionToggle: randomAbsorptionToggle.checked,
-        cityRequirement: document.getElementById('cityRequirement').value,
-        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
-        elevationToggle: document.getElementById('elevationToggle').checked // 追加
-    };
+    document.getElementById('saveToCache').addEventListener('click', () => {
+        const settings = {
+            numCells: document.getElementById('numCells').value,
+            mergeIterations: document.getElementById('mergeIterations').value,
+            tickInterval: document.getElementById('tickInterval').value,
+            absorptionPattern: absorptionPatternSelect.value,
+            capitalToggle: capitalToggle.checked,
+            cityToggle: cityToggle.checked,
+            randomAbsorptionToggle: randomAbsorptionToggle.checked,
+            cityRequirement: document.getElementById('cityRequirement').value,
+            showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
+            elevationToggle: document.getElementById('elevationToggle').checked // 追加
+        };
 
-    const mapData = {
-        cells: cells.map(cell => ({
-            points: cell.points,
-            color: cell.color,
-            elevation: cell.elevation,
-            elevationColor: cell.elevationColor,
-            neighbors: cell.neighbors
-        })),
-        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
-            cellIndex: cells.indexOf(cell),
-            color
-        })),
-        cities: cities.map(city => cells.indexOf(city)),
-        settings: settings
-    };
+        const mapData = {
+            cells: cells.map(cell => ({
+                points: cell.points,
+                color: cell.color,
+                elevation: cell.elevation,
+                elevationColor: cell.elevationColor,
+                neighbors: cell.neighbors
+            })),
+            capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+                cellIndex: cells.indexOf(cell),
+                color
+            })),
+            cities: cities.map(city => cells.indexOf(city)),
+            settings: settings
+        };
 
-    localStorage.setItem('savedMapAndSettings', JSON.stringify(mapData));
-    alert('地図と設定がキャッシュに保存されました！');
-    closeSaveLoadModal();
-});
-// 地図と設定をファイルに保存
-document.getElementById('saveToFile').addEventListener('click', () => {
-    const settings = {
-        numCells: document.getElementById('numCells').value,
-        mergeIterations: document.getElementById('mergeIterations').value,
-        tickInterval: document.getElementById('tickInterval').value,
-        absorptionPattern: absorptionPatternSelect.value,
-        capitalToggle: capitalToggle.checked,
-        cityToggle: cityToggle.checked,
-        randomAbsorptionToggle: randomAbsorptionToggle.checked,
-        cityRequirement: document.getElementById('cityRequirement').value,
-        showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
-        elevationToggle: document.getElementById('elevationToggle').checked // 追加
-    };
+        localStorage.setItem('savedMapAndSettings', JSON.stringify(mapData));
+        alert('地図と設定がキャッシュに保存されました！');
+        closeSaveLoadModal();
+    });
+    // 地図と設定をファイルに保存
+    document.getElementById('saveToFile').addEventListener('click', () => {
+        const settings = {
+            numCells: document.getElementById('numCells').value,
+            mergeIterations: document.getElementById('mergeIterations').value,
+            tickInterval: document.getElementById('tickInterval').value,
+            absorptionPattern: absorptionPatternSelect.value,
+            capitalToggle: capitalToggle.checked,
+            cityToggle: cityToggle.checked,
+            randomAbsorptionToggle: randomAbsorptionToggle.checked,
+            cityRequirement: document.getElementById('cityRequirement').value,
+            showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
+            elevationToggle: document.getElementById('elevationToggle').checked // 追加
+        };
 
-    const mapData = {
-        cells: cells.map(cell => ({
-            points: cell.points,
-            color: cell.color,
-            elevation: cell.elevation,
-            elevationColor: cell.elevationColor,
-            neighbors: cell.neighbors
-        })),
-        capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
-            cellIndex: cells.indexOf(cell),
-            color
-        })),
-        cities: cities.map(city => cells.indexOf(city)),
-        settings: settings
-    };
+        const mapData = {
+            cells: cells.map(cell => ({
+                points: cell.points,
+                color: cell.color,
+                elevation: cell.elevation,
+                elevationColor: cell.elevationColor,
+                neighbors: cell.neighbors
+            })),
+            capitals: Array.from(capitals.entries()).map(([cell, color]) => ({
+                cellIndex: cells.indexOf(cell),
+                color
+            })),
+            cities: cities.map(city => cells.indexOf(city)),
+            settings: settings
+        };
 
-    const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'TCS-MapAndSettings.json';
-    link.click();
-    closeSaveLoadModal();
-});
-// キャッシュからロード
-document.getElementById('loadFromCache').addEventListener('click', () => {
-    const savedData = localStorage.getItem('savedMapAndSettings');
-    if (savedData) {
-        try {
-            const mapData = JSON.parse(savedData);
-
-            // 地図データのロード
-            cells = mapData.cells.map(cellData => ({
-                points: cellData.points,
-                color: cellData.color,
-                elevation: cellData.elevation,
-                elevationColor: cellData.elevationColor,
-                neighbors: cellData.neighbors
-            }));
-
-            // 首都データの復元
-            capitals.clear();
-            mapData.capitals.forEach(({ cellIndex, color }) => {
-                if (cells[cellIndex]) {
-                    capitals.set(cells[cellIndex], color);
-                }
-            });
-
-            // 都市データの復元
-            cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
-
-            // 設定のロード
-            const settings = mapData.settings;
-            document.getElementById('numCells').value = settings.numCells;
-            document.getElementById('mergeIterations').value = settings.mergeIterations;
-            document.getElementById('tickInterval').value = settings.tickInterval;
-            absorptionPatternSelect.value = settings.absorptionPattern;
-            capitalToggle.checked = settings.capitalToggle;
-            cityToggle.checked = settings.cityToggle;
-            randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
-            document.getElementById('cityRequirement').value = settings.cityRequirement;
-            document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly;
-            document.getElementById('elevationToggle').checked = settings.elevationToggle; // 追加
-
-            // 地図の再描画
-            showBordersOnly = settings.showBordersOnly;
-            elevationToggle = settings.elevationToggle; // 状態を反映
-            drawCells();
-
-            alert('地図と設定がキャッシュからロードされました！');
-        } catch (e) {
-            alert('キャッシュからの読み込みに失敗しました。');
-        }
-    } else {
-        alert('キャッシュに保存された地図と設定が見つかりません。');
-    }
-    closeSaveLoadModal();
-});
-// ファイルからロード
-document.getElementById('loadFromFile').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = () => {
+        const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'TCS-MapAndSettings.json';
+        link.click();
+        closeSaveLoadModal();
+    });
+    // キャッシュからロード
+    document.getElementById('loadFromCache').addEventListener('click', () => {
+        const savedData = localStorage.getItem('savedMapAndSettings');
+        if (savedData) {
             try {
-                const mapData = JSON.parse(reader.result);
+                const mapData = JSON.parse(savedData);
 
                 // 地図データのロード
                 cells = mapData.cells.map(cellData => ({
@@ -413,16 +353,75 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
                 elevationToggle = settings.elevationToggle; // 状態を反映
                 drawCells();
 
-                alert('地図と設定がロードされました！');
+                alert('地図と設定がキャッシュからロードされました！');
             } catch (e) {
-                alert('ファイルの読み込みに失敗しました。');
+                alert('キャッシュからの読み込みに失敗しました。');
             }
-        };
-        reader.readAsText(file);
+        } else {
+            alert('キャッシュに保存された地図と設定が見つかりません。');
+        }
+        closeSaveLoadModal();
     });
-    input.click();
-    closeSaveLoadModal();
-});
+    // ファイルからロード
+    document.getElementById('loadFromFile').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const mapData = JSON.parse(reader.result);
+
+                    // 地図データのロード
+                    cells = mapData.cells.map(cellData => ({
+                        points: cellData.points,
+                        color: cellData.color,
+                        elevation: cellData.elevation,
+                        elevationColor: cellData.elevationColor,
+                        neighbors: cellData.neighbors
+                    }));
+
+                    // 首都データの復元
+                    capitals.clear();
+                    mapData.capitals.forEach(({ cellIndex, color }) => {
+                        if (cells[cellIndex]) {
+                            capitals.set(cells[cellIndex], color);
+                        }
+                    });
+
+                    // 都市データの復元
+                    cities = mapData.cities.map(index => cells[index]).filter(cell => cell);
+
+                    // 設定のロード
+                    const settings = mapData.settings;
+                    document.getElementById('numCells').value = settings.numCells;
+                    document.getElementById('mergeIterations').value = settings.mergeIterations;
+                    document.getElementById('tickInterval').value = settings.tickInterval;
+                    absorptionPatternSelect.value = settings.absorptionPattern;
+                    capitalToggle.checked = settings.capitalToggle;
+                    cityToggle.checked = settings.cityToggle;
+                    randomAbsorptionToggle.checked = settings.randomAbsorptionToggle;
+                    document.getElementById('cityRequirement').value = settings.cityRequirement;
+                    document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly;
+                    document.getElementById('elevationToggle').checked = settings.elevationToggle; // 追加
+
+                    // 地図の再描画
+                    showBordersOnly = settings.showBordersOnly;
+                    elevationToggle = settings.elevationToggle; // 状態を反映
+                    drawCells();
+
+                    alert('地図と設定がロードされました！');
+                } catch (e) {
+                    alert('ファイルの読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file);
+        });
+        input.click();
+        closeSaveLoadModal();
+    });
 
 
     // 背景クリックでモーダルを閉じる
@@ -529,7 +528,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
     function setCapitals() {
         const colors = new Set(cells.map(cell => cell.color));
         const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked; // 新トリガーを取得
-    
+
         colors.forEach(color => {
             const colorCells = cells.filter(cell => cell.color === color && (!cell.isWater || !disableWaterCities));
             if (colorCells.length > 0) {
@@ -539,7 +538,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
         });
     }
 
-    
+
     // Voronoiセルを生成
     function generateVoronoiCells(numCells, width, height) {
         const points = Array.from({ length: numCells }, () => ({
@@ -570,9 +569,8 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
 
         // セルに標高データと色を割り当てる
         assignElevationAndColorToCells(cells, noiseMap, width, height);
-        let numWater = Math.floor(numCells/500)
-        if(numWater <= 1)
-        {
+        let numWater = Math.floor(numCells / 500)
+        if (numWater <= 1) {
             numWater = 1
         }
         generateWaterCells(cells, 1, numWater); // 水セルを生成
@@ -604,8 +602,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
 
             // 標高に基づく色を計算して保存
             cell.elevationColor = elevationToColor(elevation);
-            if(elevation <= oceanSlider.value)
-            {
+            if (elevation <= oceanSlider.value) {
                 cell.isWater = true;
             }
         });
@@ -626,7 +623,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             Math.floor(Math.random() * (maxSources - minSources + 1)) + minSources,
             highElevationCells.length
         ); // 水源の数を決定
-    
+
         // 選ばれたセルを水源とする
         const selectedSources = [];
         for (let i = 0; i < waterSources; i++) {
@@ -636,40 +633,40 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             spreadWater(cells, sourceCell); // 水を広げる
         }
     }
-    
+
     // 水を周囲に広げる
     function spreadWater(cells, sourceCell) {
         const queue = [sourceCell]; // 処理対象のセルを保持するキュー
         const processed = new Set(); // 処理済みのセルを追跡
         processed.add(sourceCell);
-    
+
         while (queue.length > 0) {
             const currentCell = queue.shift(); // キューからセルを取り出す
             currentCell.isWater = true; // 現在のセルを水に設定
-    
+
             // 隣接セルを処理
             const lowerNeighbors = [];
             const higherNeighbors = [];
-    
+
             currentCell.neighbors.forEach(neighborIndex => {
                 const neighbor = cells[neighborIndex];
                 if (!neighbor || processed.has(neighbor)) return; // 無効または既に処理済みの場合はスキップ
-    
-                if (neighbor.elevation < (currentCell.elevation+0.075) && !neighbor.isWater) {
+
+                if (neighbor.elevation < (currentCell.elevation + 0.075) && !neighbor.isWater) {
                     lowerNeighbors.push(neighbor);
                 } else if (!neighbor.isWater) {
                     higherNeighbors.push(neighbor);
                 }
                 processed.add(neighbor); // 処理済みに追加
             });
-    
+
             if (lowerNeighbors.length > 0) {
                 // // 周囲に低いセルがある場合、ランダムで1つを水にして広げる
                 // const nextCell = lowerNeighbors[Math.floor(Math.random() * lowerNeighbors.length)];
                 // queue.push(nextCell);
-                
+
                 // 周囲に低いセルがある場合、最も低いセルを選択して水にする
-                const nextCell = lowerNeighbors.reduce((lowest, cell) => 
+                const nextCell = lowerNeighbors.reduce((lowest, cell) =>
                     cell.elevation < lowest.elevation ? cell : lowest, lowerNeighbors[0]
                 );
                 queue.push(nextCell);
@@ -682,7 +679,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             }
         }
     }
-    
+
 
     // 画面外に出ないようセルの端を調整
     function closeGaps(points) {
@@ -829,29 +826,29 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             }
             else {
                 // 自分自身が接している色の数
-                
+
                 const selfDiversity = globalSortedColors[selfColor]?.length * 10 || 1; // 自分の隣接色の数
                 const dominantDiversity = globalSortedColors[dominantColor]?.length * 10 || 1; // 相手の隣接色の数
-                
-                
+
+
                 // console.log(`隣接色（自分）: ${selfDiversity}, 隣接色（敵）: ${dominantDiversity}`);
-                
+
                 // グローバルカウントを取得
                 let selfGlobalCount = expansionMultipliers[selfColor] * (colorCount[selfColor] || 0) / selfDiversity;
                 let dominantGlobalCount = expansionMultipliers[dominantColor] * (colorCount[dominantColor] || 0) / dominantDiversity;
                 // console.log(`selfGlobalCount: ${selfGlobalCount}, dominantGlobalCount: ${dominantGlobalCount}`);
                 // console.log(`selfColor: ${selfColor} (count: ${selfGlobalCount}), dominantColor: ${dominantColor} (count: ${dominantGlobalCount})`);
                 // console.log(`Total Difference Factor: ${totalDifferenceFactor}`);
-                
+
                 const neighborIndices = cells.neighbors || [];
                 if (elevationToggle) {
                     const selfElevation = cells[selfIndex]?.elevation || 0; // 現在のセルの標高
                     const neighborElevations = neighborIndices.map(i => cells[i]?.elevation || 0); // 隣接セルの標高
                     const dominantElevation = neighborElevations[neighborColors.indexOf(dominantColor)] || 0;
-    
+
                     // 標高差を計算
                     const elevationDifference = Math.abs(dominantElevation - selfElevation);
-    
+
                     // 標高差に基づいて優先度を調整
                     if (dominantElevation > selfElevation) {
                         // 自分より高い場合、差が大きいほど優先度を強化
@@ -866,7 +863,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
                 if (waterToggle.checked && cells[selfIndex]?.isWater) {
                     // 水セルの優先度を強化
                     const waterResistanceFactor = 10000; // 値を調整可能: 大きいほど水セルは変わりにくい
-                    selfGlobalCount *= waterResistanceFactor;        
+                    selfGlobalCount *= waterResistanceFactor;
                 }
 
                 let totalDifferenceFactor = dominantGlobalCount / (selfGlobalCount + 1);
@@ -877,11 +874,11 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
                 if (Math.random() < Math.pow(totalDifferenceFactor, 1.2) / 3) {
                     return dominantColor;
                 }
-                
+
                 if (Math.random() < selfColorCount / totalWeight) {
                     return selfColor;
                 }
-                
+
                 return neighborColors.find(c => Math.random() < colorCounts[c] / totalWeight);
             }
         }
@@ -1040,32 +1037,32 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             cities = [];
             return;
         }
-    
+
         const cityRequirement = parseInt(document.getElementById('cityRequirement').value, 10) || 10;
         const minDistance = 50;
-    
+
         const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked; // 新トリガーを取得
         const colorGroups = new Map();
-    
+
         cells.forEach(cell => {
             if (!colorGroups.has(cell.color)) {
                 colorGroups.set(cell.color, []);
             }
             colorGroups.get(cell.color).push(cell);
         });
-    
+
         colorGroups.forEach((cellsOfColor, color) => {
             const existingCitiesInColor = cities.filter(city => city.color === color);
             const requiredCities = Math.floor(cellsOfColor.length / cityRequirement);
-    
+
             while (existingCitiesInColor.length < requiredCities) {
                 const randomCell = cellsOfColor[Math.floor(Math.random() * cellsOfColor.length)];
-    
+
                 const isFarEnough = cities.every(city => {
                     const distance = calculateDistance(randomCell, city);
                     return distance === null || distance >= minDistance;
                 }) && (!capitals.has(randomCell) || calculateDistance(randomCell, capitals.get(randomCell)) >= minDistance);
-    
+
                 // 水セルチェック（新トリガーを考慮）
                 if (!cities.includes(randomCell) && !capitals.has(randomCell) && isFarEnough && (!randomCell.isWater || !disableWaterCities)) {
                     cities.push(randomCell);
@@ -1075,7 +1072,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             }
         });
     }
-    
+
 
 
     function handleDuplicateCapitals() {
@@ -1130,45 +1127,67 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             expansionMultipliers['#FF0000'] = 1;
             expansionMultipliers['#00FF00'] = 1;
             expansionMultipliers['#FFFF00'] = 1; // 初期値を1に設定
-        
+
             cells.forEach(cell => cell.color = '#FFFFFF'); // All cells to white
-        
+
             colors.forEach(color => {
                 let randomCell;
+                let attempts = 0;
+
                 do {
                     randomCell = cells[Math.floor(Math.random() * cells.length)];
-                } while (randomCell.isWater); // 水セルを避ける
-        
+                    attempts++;
+                } while (randomCell.isWater && attempts < 50); // 水セルを避ける（最大50回試行）
+
+                if (randomCell.isWater && attempts >= 50) {
+                    console.warn(`Failed to find non-water cell after 50 attempts for color ${color}`);
+                }
+
                 randomCell.color = color;
             });
         } else if (type === 'battleRoyale') {
             // Battle Royale Mode: Set 100 random colors, rest white
             const randomColorSet = Array.from({ length: 100 }, () => getRandomColor());
             cells.forEach(cell => cell.color = '#FFFFFF'); // Set all to white
-        
+
             randomColorSet.forEach(color => {
                 let randomCell;
+                let attempts = 0;
+
                 do {
                     randomCell = cells[Math.floor(Math.random() * cells.length)];
-                } while (randomCell.isWater); // 水セルを避ける
-        
+                    attempts++;
+                } while (randomCell.isWater && attempts < 50); // 水セルを避ける（最大50回試行）
+
+                if (randomCell.isWater && attempts >= 50) {
+                    console.warn(`Failed to find non-water cell after 50 attempts for color ${color}`);
+                }
+
                 randomCell.color = color;
             });
         } else if (type === 'battleRoyale2') {
             // Battle Royale Mode: Set 250 random colors, rest white
             const randomColorSet = Array.from({ length: 250 }, () => getRandomColor());
             cells.forEach(cell => cell.color = '#FFFFFF'); // Set all to white
-        
+
             randomColorSet.forEach(color => {
                 let randomCell;
+                let attempts = 0;
+
                 do {
                     randomCell = cells[Math.floor(Math.random() * cells.length)];
-                } while (randomCell.isWater); // 水セルを避ける
-        
+                    attempts++;
+                } while (randomCell.isWater && attempts < 50); // 水セルを避ける（最大50回試行）
+
+                if (randomCell.isWater && attempts >= 50) {
+                    console.warn(`Failed to find non-water cell after 50 attempts for color ${color}`);
+                }
+
                 randomCell.color = color;
             });
         }
-        
+
+
 
         // Update capitals if enabled
         if (capitalToggle.checked) {
@@ -1312,12 +1331,10 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
         // 1. 標高を背景に描画(水の場合はスキップ)
         if (useElevation) {
             cells.forEach(cell => {
-                if(cell.isWater && waterToggle.checked)
-                {
+                if (cell.isWater && waterToggle.checked) {
                     ctx.fillStyle = '#0000FF'; // 青色
                 }
-                else
-                {
+                else {
                     ctx.fillStyle = cell.elevationColor; // 保存された色を使用
                 }
                 ctx.beginPath();
