@@ -528,12 +528,18 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
     // 各領地の首都を設定
     function setCapitals() {
         const colors = new Set(cells.map(cell => cell.color));
+        const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked; // 新トリガーを取得
+    
         colors.forEach(color => {
-            const colorCells = cells.filter(cell => cell.color === color);
-            const capitalCell = colorCells[Math.floor(Math.random() * colorCells.length)];
-            capitals.set(capitalCell, color);
+            const colorCells = cells.filter(cell => cell.color === color && (!cell.isWater || !disableWaterCities));
+            if (colorCells.length > 0) {
+                const capitalCell = colorCells[Math.floor(Math.random() * colorCells.length)];
+                capitals.set(capitalCell, color);
+            }
         });
     }
+
+    
     // Voronoiセルを生成
     function generateVoronoiCells(numCells, width, height) {
         const points = Array.from({ length: numCells }, () => ({
@@ -1034,32 +1040,34 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             cities = [];
             return;
         }
-
+    
         const cityRequirement = parseInt(document.getElementById('cityRequirement').value, 10) || 10;
-        const minDistance = 50; // 最小距離を指定
-
+        const minDistance = 50;
+    
+        const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked; // 新トリガーを取得
         const colorGroups = new Map();
+    
         cells.forEach(cell => {
             if (!colorGroups.has(cell.color)) {
                 colorGroups.set(cell.color, []);
             }
             colorGroups.get(cell.color).push(cell);
-
         });
-
+    
         colorGroups.forEach((cellsOfColor, color) => {
             const existingCitiesInColor = cities.filter(city => city.color === color);
             const requiredCities = Math.floor(cellsOfColor.length / cityRequirement);
-
+    
             while (existingCitiesInColor.length < requiredCities) {
                 const randomCell = cellsOfColor[Math.floor(Math.random() * cellsOfColor.length)];
-
+    
                 const isFarEnough = cities.every(city => {
                     const distance = calculateDistance(randomCell, city);
-                    return distance === null || distance >= minDistance; // distanceがnullの場合無視
+                    return distance === null || distance >= minDistance;
                 }) && (!capitals.has(randomCell) || calculateDistance(randomCell, capitals.get(randomCell)) >= minDistance);
-
-                if (!cities.includes(randomCell) && !capitals.has(randomCell) && isFarEnough) {
+    
+                // 水セルチェック（新トリガーを考慮）
+                if (!cities.includes(randomCell) && !capitals.has(randomCell) && isFarEnough && (!randomCell.isWater || !disableWaterCities)) {
                     cities.push(randomCell);
                     existingCitiesInColor.push(randomCell);
                     addMapLog(color, "に都市が追加されました");
@@ -1067,6 +1075,7 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             }
         });
     }
+    
 
 
     function handleDuplicateCapitals() {
@@ -1121,28 +1130,45 @@ document.getElementById('loadFromFile').addEventListener('click', () => {
             expansionMultipliers['#FF0000'] = 1;
             expansionMultipliers['#00FF00'] = 1;
             expansionMultipliers['#FFFF00'] = 1; // 初期値を1に設定
+        
             cells.forEach(cell => cell.color = '#FFFFFF'); // All cells to white
+        
             colors.forEach(color => {
-                const randomCell = cells[Math.floor(Math.random() * cells.length)];
+                let randomCell;
+                do {
+                    randomCell = cells[Math.floor(Math.random() * cells.length)];
+                } while (randomCell.isWater); // 水セルを避ける
+        
                 randomCell.color = color;
             });
         } else if (type === 'battleRoyale') {
             // Battle Royale Mode: Set 100 random colors, rest white
             const randomColorSet = Array.from({ length: 100 }, () => getRandomColor());
             cells.forEach(cell => cell.color = '#FFFFFF'); // Set all to white
+        
             randomColorSet.forEach(color => {
-                const randomCell = cells[Math.floor(Math.random() * cells.length)];
+                let randomCell;
+                do {
+                    randomCell = cells[Math.floor(Math.random() * cells.length)];
+                } while (randomCell.isWater); // 水セルを避ける
+        
                 randomCell.color = color;
             });
         } else if (type === 'battleRoyale2') {
-            // Battle Royale Mode: Set 100 random colors, rest white
+            // Battle Royale Mode: Set 250 random colors, rest white
             const randomColorSet = Array.from({ length: 250 }, () => getRandomColor());
             cells.forEach(cell => cell.color = '#FFFFFF'); // Set all to white
+        
             randomColorSet.forEach(color => {
-                const randomCell = cells[Math.floor(Math.random() * cells.length)];
+                let randomCell;
+                do {
+                    randomCell = cells[Math.floor(Math.random() * cells.length)];
+                } while (randomCell.isWater); // 水セルを避ける
+        
                 randomCell.color = color;
             });
         }
+        
 
         // Update capitals if enabled
         if (capitalToggle.checked) {
