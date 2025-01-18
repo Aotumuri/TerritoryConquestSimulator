@@ -6,7 +6,7 @@
 
     <meta name=”description” content=”じっと何かしらのものを見たい人に、ものが勝手に移り変わっていくものが見たい人用に作られた陣取り合戦シミュレータです。簡単な設定で眺めることができます。” />
     <link rel="icon" href="TCS.webp" type="image/png">
-    <title>陣取り合戦シミュレータ</title>
+    <title>空想地図ジェネレーター - FantasyMapGenerator ( FMG ) - バージョン選択ハブ</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -237,31 +237,51 @@
 <body>
     <div class="scrolling-background"></div>
     <div class="container">
-        <h1>陣取り合戦シミュレータ</h1>
-        <a href="tcs/index.html?ver=lastest">
-        <img src="TCS.webp" alt="TCSアイコン" class="large-icon">
+        <h1>空想地図メイカー</h1>
+        <a href="../index.html">
+            <img src="FGM.webp" alt="FGMアイコン" class="large-icon"><br>
         </a>
-        <a>
-        <img src="FMG.webp" alt="FMGアイコン" class="large-icon">
-        </a><br>
-        <b>不思議な地図を作ったり、眺めたりすることができるサイトです。</b><br>
-        <b>TCS: 陣取り合戦をながめれます。</b>
-        <b>FMG: マップを制作できます。</b>
-        <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a>
+        <b>なんとなく不思議な地図を作りたい人向け</b><br>
+        <!-- <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a> -->
         <!-- おすすめバージョン -->
-        <h3>TCSのおすすめのバージョン（最新版で安定！）</h3>
-        <a href="tcs/index.html?ver=lastest" target="_blank" class="super-link">最新版</a>
-        <a href="tcs/index.html" target="_blank" class="super-link">バージョンリストへ</a>
-        <h3>FMGのおすすめのバージョン（最新版で安定！）</h3>
-        <p>最新版は製作中です。近日公開！</p>
-        <a href="fgm/index.html" target="_blank" class="super-link">バージョンリストへ</a>
+        <h3>おすすめのバージョン（最新版で安定！）</h3>
+        <!-- <a href="map-v1.2.3.3/index.html" target="_blank" class="super-link">1.2.3.3</a> -->
 
-    <div class="version-info">FMGS-HUB v1.0</div>
+        <h3>お好きなバージョンを選んでください。</h3>
+        <p>古いバージョンはバグを含んでる可能性があります。</p>
+        <p>バージョンの見方<br>青:リスト, 緑:リリースされたバージョン, <br>赤:バグのため消されたバージョン, オレンジ:開発中</p>
+
+
+        <!-- バージョン選択リスト -->
+        <ul class="version-list">
+        </ul>
+        <!-- <div class="announcements">
+            <h2>お知らせ</h2>
+            <div class="announcement-item">新バージョン 1.0.3.1 がリリースされました！安定性とパフォーマンスが向上しています。</div>
+            <div class="announcement-item">次回のメンテナンスは 12月1日 14:00 に予定されています。</div>
+            <div class="announcement-item">TCS-HUB v1.1 開発中のプレビューが近日公開予定です。</div>
+        </div> -->
+    </div>
+    <div class="version-info">TCS-HUB v1.0.2</div>
 
     <script>
         function toggleSubMenu(element) {
             const parentItem = element.parentElement;
             parentItem.classList.toggle('expanded');
+        }
+        // クエリパラメータを取得
+        const params = new URLSearchParams(window.location.search);
+
+        // "ver"パラメータを確認
+        if (params.get('ver') === 'lastest') {
+            // クラスが'super-link'のリンクを探す
+            const superLink = document.querySelector('.super-link');
+            if (superLink) {
+                // super-linkのリンク先にリダイレクト
+                window.location.href = superLink.href;
+            } else {
+                console.warn('super-linkクラスのリンクが見つかりませんでした。');
+            }
         }
     </script>
 

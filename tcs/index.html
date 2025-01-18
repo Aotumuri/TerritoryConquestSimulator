@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name=”description” content=”じっと何かしらのものを見たい人に、ものが勝手に移り変わっていくものが見たい人用に作られた陣取り合戦シミュレータです。簡単な設定で眺めることができます。” />
+    <link rel="icon" href="TCS.webp" type="image/png">
+    <title>陣取り合戦シミュレータ -TerritoryConquestSimulator ( TCS ) - バージョン選択ハブ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: start; /* 上部から開始 */
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            overflow-y: auto; /* 縦スクロールを有効に */
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto; /* コンテンツの縦スクロールを有効に */
+            box-sizing: border-box;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .version-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* メジャーバージョンのリンク */
+        .version-item > a {
+            display: block;
+            font-size: 18px;
+            text-decoration: none;
+            color: #1a73e8;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: rgba(224, 231, 255, 0.7);
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        /* サブリストのスタイル */
+        .sub-list {
+            list-style-type: none;
+            padding: 0 0 0 20px;
+            margin-top: 5px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        /* 展開時のアニメーション */
+        .expanded > .sub-list {
+            max-height: 10000px;
+        }
+
+        /* サブアイテムリンク */
+        .sub-item > a,
+        .super-link {
+            text-decoration: none;
+            font-size: 16px;
+            display: block;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 通常のサイトの色 */
+        .normal-link {
+            color: #357a38;
+            background-color: rgba(53, 122, 56, 0.15);
+        }
+
+        /* 没のサイトの色 */
+        .discarded-link {
+            color: #b71c1c;
+            background-color: rgba(183, 28, 28, 0.15);
+        }
+
+        /* 青みがかったサブメニューリンク */
+        .sub-menu-link {
+            color: #1a73e8;
+            font-weight: bold;
+            background-color: rgba(224, 231, 255, 0.5);
+        }
+
+        /* おすすめリンク（黄色） */
+        .super-link {
+            color: #8a6d3b;
+            background-color: rgba(255, 223, 0, 0.2); /* 薄い黄色 */
+        }
+
+        /* ホバーエフェクト */
+        .sub-item > a:hover,
+        .super-link:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        /* 開発中バージョンのスタイル */
+        .development-link {
+            color: #b85900; /* 濃いオレンジ */
+            background-color: rgba(255, 165, 0, 0.2); /* 薄いオレンジ */
+            font-weight: bold;
+            padding: 8px;
+            border-radius: 4px;
+            display: block;
+            text-decoration: none;
+            margin-bottom: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        /* 開発中バージョンのホバーエフェクト */
+        .development-link:hover {
+            background-color: rgba(255, 165, 0, 0.3); /* 濃いオレンジのホバー背景 */
+            transform: translateY(-2px); /* 少し浮くようなエフェクト */
+        }
+
+        /* 開発中バージョンのアクティブ状態 */
+        .development-link:active {
+            background-color: rgba(255, 140, 0, 0.4); /* さらに濃いオレンジ */
+            transform: translateY(0); /* アクティブ時は元の位置に戻す */
+        }
+        .large-icon {
+            width: 120px; /* アイコンの幅 */
+            height: 120px; /* アイコンの高さ */
+            object-fit: cover; /* 画像を枠にフィット */
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); /* 影を追加 */
+        }        
+        /* 背景画像のスタイル */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), 
+                            url('background.webp');
+            background-size: cover;
+            background-position: center bottom; /* 下から開始 */
+            background-repeat: repeat-y;
+            position: relative;
+        }
+
+        /* 背景スクロールアニメーション */
+        @keyframes scrollBackground {
+            0% { background-position: center bottom; } /* 開始位置を下に */
+            100% { background-position: center top; }   /* 終了位置を上に */
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%; /* 2倍の高さにしてスムーズに繋げる */
+            background-image: url('background.webp');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: repeat-y;
+            filter: blur(3px); /* ぼかし効果 */
+            animation: scrollBackground 300s linear infinite;
+            z-index: -2; /* 背景を後ろに配置 */
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.6); /* 白のオーバーレイ、透明度60% */
+            z-index: -1; /* コンテンツの後ろ、背景画像の前に配置 */
+        }
+        /* 右下にバージョン情報を固定表示 */
+        .version-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            color: rgba(0, 0, 0, 0.3); /* うっすらとした灰色 */
+            font-size: 32px;
+            font-family: Arial, sans-serif;
+        }
+        @keyframes scrollBackground {
+            0% { background-position: center bottom; }
+            100% { background-position: center top; }
+        }
+        /* お知らせエリア */
+        /* .announcements {
+            flex: 1;
+            background: rgba(245, 245, 245, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .announcements h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .announcement-item {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        } */
+    </style>
+</head>
+<body>
+    <div class="scrolling-background"></div>
+    <div class="container">
+        <h1>陣取り合戦シミュレータ</h1>
+        <a href="../index.html">
+            <img src="TCS.webp" alt="TCSアイコン" class="large-icon"><br>
+        </a>
+        <b>なんとなく、領土が変わっていくところを見たい人。<br>勝手に色々変わっていくものが見たい人ようです。</b><br>
+        <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a>
+        <!-- おすすめバージョン -->
+        <h3>おすすめのバージョン（最新版で安定！）</h3>
+        <a href="map-v1.2.3.3/index.html" target="_blank" class="super-link">1.2.3.3</a>
+
+        <h3>お好きなバージョンを選んでください。</h3>
+        <p>古いバージョンはバグを含んでる可能性があります。</p>
+        <p>バージョンの見方<br>青:リスト, 緑:リリースされたバージョン, <br>赤:バグのため消されたバージョン, オレンジ:開発中</p>
+
+
+        <!-- バージョン選択リスト -->
+        <ul class="version-list">
+            <li class="version-item">
+                <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.2</a>
+                <ul class="sub-list">
+                    <li class="sub-item"></li>
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.2.3</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.2.3.3/index.html" target="_blank" class="sub-item-link normal-link">1.2.3.3</a></li>
+                            <li class="sub-item"><a href="map-v1.2.3.2/index.html" target="_blank" class="sub-item-link normal-link">1.2.3.2</a></li>
+                            <li class="sub-item"><a href="map-v1.2.3.1/index.html" target="_blank" class="sub-item-link normal-link">1.2.3.1</a></li>
+                            <li class="sub-item"><a href="map-v1.2.3/index.html" target="_blank" class="sub-item-link normal-link">1.2.3</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.2.2</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.2.2.2/index.html" target="_blank" class="sub-item-link normal-link">1.2.2.2</a></li>
+                            <li class="sub-item"><a href="map-v1.2.2.1/index.html" target="_blank" class="sub-item-link normal-link">1.2.2.1</a></li>
+                            <li class="sub-item"><a href="map-v1.2.2/index.html" target="_blank" class="sub-item-link normal-link">1.2.2</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.2.1</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.2.1.1/index.html" target="_blank" class="sub-item-link normal-link">1.2.1.1</a></li>
+                            <li class="sub-item"><a href="map-v1.2.1/index.html" target="_blank" class="sub-item-link normal-link">1.2.1</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item"><a href="map-v1.2/index.html" target="_blank" class="sub-item-link normal-link">1.2</a></li>
+                </ul>
+            </li>
+            <li class="version-item">
+                <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.1</a>
+                <ul class="sub-list">
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.1.2</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.1.2.3/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.3</a></li>
+                            <li class="sub-item"><a href="map-v1.1.2.2/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.2</a></li>
+                            <li class="sub-item"><a href="map-v1.1.2.1/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.1</a></li>
+                            <li class="sub-item"><a href="map-v1.1.2/index.html" target="_blank" class="sub-item-link normal-link">1.1.2</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item"><a href="map-v1.1.1/index.html" target="_blank" class="sub-item-link normal-link">1.1.1</a></li>
+                    <li class="sub-item"><a href="map-v1.1/index.html" target="_blank" class="sub-item-link normal-link">1.1</a></li>
+                </ul>
+            </li>
+            <li class="version-item">
+                <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.0</a>
+                <ul class="sub-list">
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.0.5</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.0.5.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.5.1</a></li>
+                            <li class="sub-item"><a href="map-v1.0.5/index.html" target="_blank" class="sub-item-link normal-link">1.0.5</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.0.4</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.0.4.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.4.1</a></li>
+                            <li class="sub-item"><a href="map-v1.0.4/index.html" target="_blank" class="sub-item-link normal-link">1.0.4</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item">
+                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.0.3</a>
+                        <ul class="sub-list">
+                            <li class="sub-item"><a href="map-v1.0.3.4/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.4</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.3/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.3</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.2/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.2</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1没2/index.html" target="_blank" class="sub-item-link discarded-link">1.0.3.1 没 2</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1没/index.html" target="_blank" class="sub-item-link discarded-link">1.0.3.1 没</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.3.1</a></li>
+                            <li class="sub-item"><a href="map-v1.0.3/index.html" target="_blank" class="sub-item-link normal-link">1.0.3</a></li>
+                        </ul>
+                    </li>
+                    <li class="sub-item"><a href="map-v1.0.2/index.html" target="_blank" class="sub-item-link normal-link">1.0.2</a></li>
+                    <li class="sub-item"><a href="map-v1.0.1/index.html" target="_blank" class="sub-item-link normal-link">1.0.1</a></li>
+                    <li class="sub-item"><a href="map/index.html" target="_blank" class="sub-item-link normal-link">1.0</a></li>
+                </ul>
+            </li>
+        </ul>
+        <!-- <div class="announcements">
+            <h2>お知らせ</h2>
+            <div class="announcement-item">新バージョン 1.0.3.1 がリリースされました！安定性とパフォーマンスが向上しています。</div>
+            <div class="announcement-item">次回のメンテナンスは 12月1日 14:00 に予定されています。</div>
+            <div class="announcement-item">TCS-HUB v1.1 開発中のプレビューが近日公開予定です。</div>
+        </div> -->
+    </div>
+    <div class="version-info">TCS-HUB v1.0.2</div>
+
+    <script>
+        function toggleSubMenu(element) {
+            const parentItem = element.parentElement;
+            parentItem.classList.toggle('expanded');
+        }
+        // クエリパラメータを取得
+        const params = new URLSearchParams(window.location.search);
+
+        // "ver"パラメータを確認
+        if (params.get('ver') === 'lastest') {
+            // クラスが'super-link'のリンクを探す
+            const superLink = document.querySelector('.super-link');
+            if (superLink) {
+                // super-linkのリンク先にリダイレクト
+                window.location.href = superLink.href;
+            } else {
+                console.warn('super-linkクラスのリンクが見つかりませんでした。');
+            }
+        }
+    </script>
+
+</body>
+</html>

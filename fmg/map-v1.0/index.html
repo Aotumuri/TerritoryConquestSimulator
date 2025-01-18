@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="FMG.webp" type="image/png">
+    <title>空想地図ジェネレーター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <!-- キャンバスエリア -->
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+        <!-- サイドバー -->
+        <div id="sidebar">
+            <h3>空想地図ジェネレーター</h3>
+            <div id="settings">
+                <h4>設定</h4>
+                <label for="numCells">セルの数:</label>
+                <input type="number" id="numCells" value="100" min="10" max="10000"><br>
+
+                <button id="regenerateButton">地図を再生成</button>
+            </div>
+
+            <div id="penModeSection">
+                <h3>ペンモード</h3>
+                <button id="setWaterPen">水を配置する</button>
+                <button id="setLandPen">地面を配置する</button>
+            </div>
+                     
+
+            <div id="versionLabel">空想地図ジェネレーター v1.1<br>by ChatGPT & Aotumuri</div>
+        </div>
+    </div>
+
+    <!-- d3-delaunay CDN -->
+    <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
