@@ -22,10 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const elevationToggle = document.getElementById('elevationToggle');
     const waterToggle = document.getElementById('waterToggle');
     const oceanSlider = document.getElementById('oceanSlider');
+    const initializeMapButton = document.getElementById('initializeMapButton');
+    const toggleWaterModeButton = document.getElementById('toggleWaterModeButton');
+    const sidebarButtons = document.querySelectorAll('#sidebar button'); // サイドバー内の全てのボタン
+    const waterRangeSlider = document.getElementById('waterRange');
+    const toggleRemoveWaterModeButton = document.getElementById('toggleRemoveWaterModeButton');
+    let isWaterModeActive = false;
 
     let showBordersOnly = false; // 初期設定はオフ
     let globalSortedColors = []; // グローバル変数として定義
     let expansionMultipliers = []; // 色ごとの領土拡張倍率
+    let isCanvasStopped = false; // キャンバス操作を停止するフラグ
 
     // チェックボックスの設定イベントリスナー
     document.getElementById('showBordersOnlyToggle').addEventListener('change', (e) => {
@@ -206,6 +213,158 @@ document.addEventListener('DOMContentLoaded', () => {
     //     }
     // });
 
+    initializeMapButton.addEventListener('click', () => {
+        // 入力されたステート数と基本標高を取得
+        const numCells = parseInt(document.getElementById('initialNumCells').value);
+        const initialElevation = parseFloat(document.getElementById('initialElevation').value);
+    
+        // 地図を初期化
+        initializeMap(numCells, initialElevation);
+    });
+    
+    // 地図を初期化する関数
+    function initializeMap(numCells, elevation) {
+        // グローバルセルデータを初期化
+        cells = generateVoronoiCells(numCells, canvas.width, canvas.height);
+    
+        cells.forEach(cell => {
+            // 標高を指定された値に設定
+            cell.elevation = elevation;
+            cell.elevationColor = elevationToColor(elevation);
+    
+            // 色を全て白に設定
+            cell.color = '#FFFFFF';
+    
+            // 水セルフラグをリセット
+            cell.isWater = false;
+        });
+    
+        // 首都や都市データをリセット
+        capitals.clear();
+        cities = [];
+        
+        window.cells = cells;
+    
+        // 地図を再描画
+        drawCells();
+    }
+
+    let currentMode = "none"; // 初期状態（操作なし）
+
+    // ボタンのイベントリスナー
+toggleWaterModeButton.addEventListener('click', () => {
+    setMode("addWater");
+});
+
+toggleRemoveWaterModeButton.addEventListener('click', () => {
+    setMode("removeWater");
+});
+
+toggleNoneModeButton.addEventListener('click', () => {
+    setMode("none");
+});
+
+// モード切り替え関数
+function setMode(mode) {
+    currentMode = mode;
+
+    // ボタンのUIを更新
+    toggleWaterModeButton.classList.toggle('active_edit', currentMode === "addWater");
+    toggleRemoveWaterModeButton.classList.toggle('active_edit', currentMode === "removeWater");
+
+    // キャンバスのカーソルを変更
+    canvas.style.cursor = currentMode !== "none" ? "pointer" : "default";
+
+    // モードが操作モードの場合、キャンバスイベントを有効化
+    if (currentMode === "addWater" || currentMode === "removeWater") {
+        isCanvasStopped = true;
+        enableCanvasInteraction();
+    } else {
+        isCanvasStopped = false;
+        disableCanvasInteraction();
+    }
+}
+
+// キャンバスイベントの有効化
+function enableCanvasInteraction() {
+    canvas.addEventListener('mousedown', startInteraction);
+    canvas.addEventListener('mousemove', continueInteraction);
+    canvas.addEventListener('mouseup', stopInteraction);
+}
+
+// キャンバスイベントの無効化
+function disableCanvasInteraction() {
+    canvas.removeEventListener('mousedown', startInteraction);
+    canvas.removeEventListener('mousemove', continueInteraction);
+    canvas.removeEventListener('mouseup', stopInteraction);
+}
+
+// 操作モードに応じたクリック・ドラッグの処理
+let isInteracting = false;
+
+function startInteraction(event) {
+    if (event.metaKey || event.ctrlKey) return; // Command/Ctrlが押されている場合は無効化
+    isInteracting = true;
+    handleInteraction(event); // 最初の操作を実行
+}
+
+function continueInteraction(event) {
+    if (!isInteracting) return;
+    handleInteraction(event); // ドラッグ中の操作を実行
+}
+
+function stopInteraction() {
+    isInteracting = false; // 操作終了
+}
+
+// 操作の実行
+function handleInteraction(event) {
+    const rect = canvas.getBoundingClientRect();
+    const cssX = event.clientX - rect.left;
+    const cssY = event.clientY - rect.top;
+
+    // キャンバスの描画座標系に変換
+    const mapX = (cssX - origin.x) / scale;
+    const mapY = (cssY - origin.y) / scale;
+
+    // 該当するセルを検索
+    const clickedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
+
+    if (clickedCell) {
+        const range = parseInt(waterRangeSlider.value); // スライダー値を取得
+        if (currentMode === "addWater") {
+            setWaterInRange(clickedCell, range); // 水を追加
+        } else if (currentMode === "removeWater") {
+            removeWaterInRange(clickedCell, range); // 水を抜く
+        }
+        drawCells(); // 地図の再描画
+    }
+}
+
+// 範囲内のセルを水セルに設定
+function setWaterInRange(centerCell, range) {
+    const rangeSquared = range * range * 20;
+    cells.forEach(cell => {
+        const dx = cell.points[0][0] - centerCell.points[0][0];
+        const dy = cell.points[0][1] - centerCell.points[0][1];
+        if (dx * dx + dy * dy <= rangeSquared && !cell.isWater) {
+            cell.isWater = true;
+        }
+    });
+}
+
+// 範囲内のセルから水を抜く
+function removeWaterInRange(centerCell, range) {
+    const rangeSquared = range * range * 20;
+    cells.forEach(cell => {
+        const dx = cell.points[0][0] - centerCell.points[0][0];
+        const dy = cell.points[0][1] - centerCell.points[0][1];
+        if (dx * dx + dy * dy <= rangeSquared && cell.isWater) {
+            cell.isWater = false;
+        }
+    });
+}
+
     let autoMergeRunningFlg = false;
     // モーダルを表示する関数
     function showSaveLoadModal() {
@@ -248,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cityRequirement: document.getElementById('cityRequirement').value,
             showBordersOnly: document.getElementById('showBordersOnlyToggle').checked,
             elevationToggle: document.getElementById('elevationToggle').checked,
+            waterToggle: document.getElementById('waterToggle').checked,
             disableWaterCitiesToggle: document.getElementById('disableWaterCitiesToggle').checked,
             oceanSlider: document.getElementById('oceanSlider').value
         };
@@ -307,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cityRequirement').value = settings.cityRequirement;
         document.getElementById('showBordersOnlyToggle').checked = settings.showBordersOnly;
         document.getElementById('elevationToggle').checked = settings.elevationToggle;
+        document.getElementById('waterToggle').checked = settings.waterToggle;
         document.getElementById('disableWaterCitiesToggle').checked = settings.disableWaterCitiesToggle;
         document.getElementById('oceanSlider').value = settings.oceanSlider;
 
@@ -314,6 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 地図の再描画
         showBordersOnly = settings.showBordersOnly;
         elevationToggle = settings.elevationToggle;
+        window.cells = cells;
         drawCells();
     }
 
@@ -480,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 各領地の首都を設定
     function setCapitals() {
         const colors = new Set(cells.map(cell => cell.color));
-        const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked; // 新トリガーを取得
+        const disableWaterCities = document.getElementById('disableWaterCitiesToggle').checked;
 
         colors.forEach(color => {
             const colorCells = cells.filter(cell => cell.color === color && (!cell.isWater || !disableWaterCities));
@@ -1174,8 +1336,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let origin = { x: 0, y: 0 }; // キャンバスのドラッグ開始点
     let isDragging = false;
 
-    // ズーム機能（ホイール操作およびピンチ操作）
+    // ズーム機能（ホイール操作）
     canvas.addEventListener('wheel', (e) => {
+        // 停止中は Command (Mac) または Ctrl (Windows) が押されている場合のみズーム可能
+        if (isCanvasStopped && !(e.metaKey || e.ctrlKey)) return;
+
         e.preventDefault();
         const zoomAmount = e.deltaY * -0.001;
         const zoomFactor = Math.min(Math.max(0.5, scale + zoomAmount), 3) / scale;
@@ -1193,10 +1358,9 @@ document.addEventListener('DOMContentLoaded', () => {
         drawCells();
     });
 
-
-    // タッチズーム（ピンチ）対応
-    let lastDistance = null;
+    // タッチズーム（ピンチ操作対応）
     canvas.addEventListener('touchmove', (e) => {
+        if (isCanvasStopped) return; // 停止中は操作を無効化
         if (e.touches.length === 2) {
             e.preventDefault();
             const touch1 = e.touches[0];
@@ -1220,45 +1384,49 @@ document.addEventListener('DOMContentLoaded', () => {
         lastDistance = null;
     });
 
-    let lastPosition = { x: 0, y: 0 };
-
+    // ドラッグ（マウス操作）
     canvas.addEventListener('mousedown', (e) => {
+        if (isCanvasStopped && !(e.metaKey || e.ctrlKey)) return; // 停止中は Command/Ctrl が必要
         isDragging = true;
         lastPosition = { x: e.clientX, y: e.clientY };
     });
 
     canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const dx = e.clientX - lastPosition.x;
-            const dy = e.clientY - lastPosition.y;
-            origin.x += dx;
-            origin.y += dy;
-            lastPosition = { x: e.clientX, y: e.clientY };
-            drawCells();
-        }
+        if (!isDragging) return;
+        if (isCanvasStopped && !(e.metaKey || e.ctrlKey)) return; // 停止中は Command/Ctrl が必要
+
+        const dx = e.clientX - lastPosition.x;
+        const dy = e.clientY - lastPosition.y;
+        origin.x += dx;
+        origin.y += dy;
+        lastPosition = { x: e.clientX, y: e.clientY };
+        drawCells();
     });
 
     canvas.addEventListener('mouseup', () => {
         isDragging = false;
     });
 
+    // ドラッグ（タッチ操作）
     canvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
+            if (isCanvasStopped) return; // 停止中はドラッグ不可
             isDragging = true;
             lastPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
     });
 
     canvas.addEventListener('touchmove', (e) => {
-        if (isDragging && e.touches.length === 1) {
-            e.preventDefault();
-            const dx = e.touches[0].clientX - lastPosition.x;
-            const dy = e.touches[0].clientY - lastPosition.y;
-            origin.x += dx;
-            origin.y += dy;
-            lastPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            drawCells();
-        }
+        if (!isDragging || e.touches.length !== 1) return;
+        if (isCanvasStopped) return; // 停止中はドラッグ不可
+
+        e.preventDefault();
+        const dx = e.touches[0].clientX - lastPosition.x;
+        const dy = e.touches[0].clientY - lastPosition.y;
+        origin.x += dx;
+        origin.y += dy;
+        lastPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        drawCells();
     });
 
     canvas.addEventListener('touchend', () => {
@@ -1399,17 +1567,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // タブを表示する関数
     function showTab(tabId) {
+        // すべてのタブコンテンツを非表示に
         document.querySelectorAll('.tabContent').forEach(tab => {
             tab.style.display = 'none';
         });
 
+        // 指定したタブを表示
+        document.getElementById(tabId).style.display = 'block';
+
+        // タブボタンのアクティブ状態を切り替え
         document.querySelectorAll('.tabButton').forEach(button => {
             button.classList.remove('active');
         });
-
-        document.getElementById(tabId).style.display = 'block';
-        document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+        document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
     }
 
     // 初期表示として「地図設定」タブを表示
