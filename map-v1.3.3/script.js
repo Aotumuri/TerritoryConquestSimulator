@@ -31,9 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let isWaterModeActive = false;
 
     // 名前リストの定義
-    const prefixes = ["アルペルガ", "クログスタ", "ドルケスタ", "バルトラン", "エリオス",
+    const prefixes = ["アルペルガ", "クログスタ", "ドルケスタ", "バルトラン", "エリタリア",
         "オールグア","フルナスタ","ブルザリア","ロアノース","ドツロセン",//オーストリア　フランス　ブリタニア（イギリス） ロシア　ドイツ
-        "ニホロニア","ハルガスト","スペニシア","ポラノキガル","イテレシア"//日本　ハンガリー　スペイン　ポルトガル　イタリア
+        "ニホロニア","ハルガスト","スペニシア","ポラノキガル","イテレシア",//日本　ハンガリー　スペイン　ポルトガル　イタリア
+        "カルガリズム","","","","" //カルガリズム
     ];
     const suffixes = ["帝国", "王国", "共和国", "連邦共和国", "公国","二重帝国"];
 
@@ -1297,7 +1298,6 @@ function removeWaterInRange(centerCell, range) {
             cells = generateVoronoiCells(numCells, canvas.width, canvas.height);
             window.cells = cells; // cellsをグローバル変数に設定
         }
-
         // Special generation pattern
         if (type === 'whiteWithFourColors') {
             // Set most cells to white, with four specific colors for four cells
@@ -1373,6 +1373,7 @@ function removeWaterInRange(centerCell, range) {
             setCapitalsForSpecialGeneration();
         }
 
+        assignNamesToRegions(cells, useRandomNames);
         drawCells(); // Redraw the updated map
         updateColorRanking(); // Ensure ranking is updated after color changes
     }
@@ -1601,35 +1602,49 @@ function removeWaterInRange(centerCell, range) {
     function addMapLog(color, message, defenderColor = null) {
         // 白色のログは無視
         if (color.toLowerCase() === '#ffffff' || (defenderColor && defenderColor.toLowerCase() === '#ffffff')) return;
-
+    
         const logList = document.getElementById('logList');
         const logItem = document.createElement('li');
-
+    
+        // 国名を取得
+        const attackerName = getCountryNameByColor(color);
+        const defenderName = defenderColor ? getCountryNameByColor(defenderColor) : null;
+    
         if (defenderColor) {
             logItem.innerHTML = `
                 <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 5px;"></span>
+                <span>${attackerName}</span>
                 <span>が</span>
                 <span class="color-box" style="background-color: ${defenderColor}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 5px;"></span>
+                <span>${defenderName}</span>
                 <span>${message}</span>
             `;
         } else {
             logItem.innerHTML = `
                 <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
+                <span>${attackerName}</span>
                 <span>${message}</span>
             `;
         }
-
+    
         // 最新のログを上に追加
         logList.insertBefore(logItem, logList.firstChild);
-
+    
         // ログの保存数を取得し、超過分を削除
         const logLimitInput = document.getElementById('logLimit');
         const logLimit = parseInt(logLimitInput.value) || 10;
-
+    
         while (logList.children.length > logLimit) {
             logList.removeChild(logList.lastChild); // 最も古いログを削除
         }
     }
+    
+    // 国名を取得する関数
+    function getCountryNameByColor(color) {
+        const cell = cells.find(c => c.color.toLowerCase() === color.toLowerCase());
+        return cell && cell.name ? cell.name : "不明";
+    }
+    
 
     // タブを表示する関数
     function showTab(tabId) {
@@ -1658,57 +1673,55 @@ function removeWaterInRange(centerCell, range) {
     function updateColorRanking() {
         colorCount = {};
         const cells = window.cells || [];
-
+    
         // 各セルの色をカウント
         cells.forEach(cell => {
             if (!cell || !cell.color) return;
             colorCount[cell.color] = (colorCount[cell.color] || 0) + 1;
         });
-
+    
         // 表示する上位数を設定（デフォルトは10）
         const topCountInput = document.getElementById('topCount');
         const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
-
-        console.log(colorCount)
-
+    
+        console.log(colorCount);
+    
         // 領地数の多い順にソートし、指定した数だけ取得
         const sortedColors = Object.entries(colorCount)
             .sort((a, b) => b[1] - a[1])
             .slice(0, topCount);
-
+    
         // リストを表示する要素を取得
         const rankingList = document.getElementById('rankingList');
         rankingList.innerHTML = ""; // 一度内容をクリア
-
+    
         // ソートされた色と領地数を <p> 要素で表示
         sortedColors.forEach(([color, count]) => {
             // 拡張倍率を取得し、実質領地数を計算
             const multiplier = expansionMultipliers[color] || 1; // 倍率（初期値1）
-
             const adjustedCount = count * multiplier; // 実質領地数
-
+    
+            // 国名を取得（対応するセルから）
+            const cell = cells.find(c => c.color === color);
+            const countryName = cell && cell.name ? cell.name : "不明";
+    
             // ランキング項目を作成
             const listItem = document.createElement('p');
-            console.log(color);
-            console.log(`実質倍率${expansionMultipliers[color]}`);
-            console.log(expansionMultipliers);
-
             if (expansionMultipliers[color] == 1) {
                 listItem.innerHTML = `
                     <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
-                    <span>${count} 領地</span>
+                    <span>${countryName} (${color}): ${count} 領地</span>
                 `;
-            }
-            else {
+            } else {
                 listItem.innerHTML = `
-                <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
-                <span>${count} 領地</span>
-                <span style="margin-left: 10px;">(倍率: ${multiplier.toFixed(2)}, 実質: ${adjustedCount.toFixed(2)} 領地)</span>
-            `;
+                    <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
+                    <span>${countryName} (${color}): ${count} 領地</span>
+                    <span style="margin-left: 10px;">(倍率: ${multiplier.toFixed(2)}, 実質: ${adjustedCount.toFixed(2)} 領地)</span>
+                `;
             }
             rankingList.appendChild(listItem);
         });
-    }
+    }    
 
 
     // グローバルにアクセスできるように関数を window に追加
