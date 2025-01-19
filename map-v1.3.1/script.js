@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const absorptionPatternSelect = document.getElementById('absorptionPattern');
     const saveLoadModal = document.getElementById('saveLoadModal');
     const closeModalButton = document.getElementById('closeModal');
-    const elevationToggle = document.getElementById('elevationToggle');
+    let elevationToggle = document.getElementById('elevationToggle');
     const waterToggle = document.getElementById('waterToggle');
     const oceanSlider = document.getElementById('oceanSlider');
     const initializeMapButton = document.getElementById('initializeMapButton');
@@ -426,7 +426,8 @@ function removeWaterInRange(centerCell, range) {
                 color
             })),
             cities: cities.map(city => cells.indexOf(city)),
-            settings: settings
+            settings: settings,
+            expansionMultipliers: expansionMultipliers
         };
 
         return mapData;
@@ -471,6 +472,7 @@ function removeWaterInRange(centerCell, range) {
         document.getElementById('disableWaterCitiesToggle').checked = settings.disableWaterCitiesToggle;
         document.getElementById('oceanSlider').value = settings.oceanSlider;
 
+        expansionMultipliers = mapData.expansionMultipliers;
 
         // 地図の再描画
         showBordersOnly = settings.showBordersOnly;
@@ -530,6 +532,7 @@ function removeWaterInRange(centerCell, range) {
                     alert('地図と設定がロードされました！');
                 } catch (e) {
                     alert('ファイルの読み込みに失敗しました。');
+                    console.log(e)
                 }
             };
             reader.readAsText(file);
@@ -1604,6 +1607,8 @@ function removeWaterInRange(centerCell, range) {
         // 表示する上位数を設定（デフォルトは10）
         const topCountInput = document.getElementById('topCount');
         const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
+
+        console.log(colorCount)
 
         // 領地数の多い順にソートし、指定した数だけ取得
         const sortedColors = Object.entries(colorCount)
