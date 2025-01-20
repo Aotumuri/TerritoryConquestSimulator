@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (currentMode === "removeWater") {
                 removeWaterInRange(clickedCell, range); // 水を抜く
             } else if (currentMode === "modifyElevation") {
-                handleElevationChange(clickedCell, range); // 水を抜く
+                handleElevationChange(clickedCell, range); // 標高変更
             }
             drawCells(); // 地図の再描画
         }
@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 1;
+            rangeSquared = 0.01;
         }
         else
         {
@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 1;
+            rangeSquared = 0.01;
         }
         else
         {
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 1;
+            rangeSquared = 0.01;
         }
         else
         {
@@ -542,9 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.elevationColor = elevationToColor(newElevation); // 色を更新
             }
         });
-
-        drawCells(); // 再描画
-        console.log(`範囲内のセルの標高を ${newElevation} に変更しました`);
     }
 
 
