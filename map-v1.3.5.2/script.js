@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const waterRangeSlider = document.getElementById('waterRange');
     const toggleRemoveWaterModeButton = document.getElementById('toggleRemoveWaterModeButton');
     let useRandomNames = document.getElementById('useRandomNamesToggle').checked;
+    const elevationSlider = document.getElementById('elevationSlider');
+    const uniformElevationButton = document.getElementById('uniformElevationButton');
+    const modifyElevationSlider = document.getElementById('modifyElevationSlider');
+    const modifyElevationModeButton = document.getElementById('modifyElevationModeButton');
     let isWaterModeActive = false;
 
     // 名前リストの定義
@@ -387,6 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setMode("removeWater");
     });
 
+    modifyElevationModeButton.addEventListener('click', () => {
+        setMode("modifyElevation");
+    });
+
     toggleNoneModeButton.addEventListener('click', () => {
         setMode("none");
     });
@@ -398,17 +406,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // ボタンのUIを更新
         toggleWaterModeButton.classList.toggle('active_edit', currentMode === "addWater");
         toggleRemoveWaterModeButton.classList.toggle('active_edit', currentMode === "removeWater");
+        modifyElevationModeButton.classList.toggle('active_edit', currentMode === "modifyElevation");
 
         // キャンバスのカーソルを変更
         canvas.style.cursor = currentMode !== "none" ? "pointer" : "default";
 
-        // モードが操作モードの場合、キャンバスイベントを有効化
-        if (currentMode === "addWater" || currentMode === "removeWater") {
+        // モードに応じてキャンバスイベントを切り替え
+        if (currentMode === "addWater" || currentMode === "removeWater" || currentMode === "modifyElevation") {
             isCanvasStopped = true;
-            enableCanvasInteraction();
+            enableCanvasInteraction(); // キャンバスイベントを有効化
         } else {
             isCanvasStopped = false;
-            disableCanvasInteraction();
+            disableCanvasInteraction(); // キャンバスイベントを無効化
         }
     }
 
@@ -463,6 +472,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setWaterInRange(clickedCell, range); // 水を追加
             } else if (currentMode === "removeWater") {
                 removeWaterInRange(clickedCell, range); // 水を抜く
+            } else if (currentMode === "modifyElevation") {
+                handleElevationChange(clickedCell, range); // 水を抜く
             }
             drawCells(); // 地図の再描画
         }
@@ -470,7 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 範囲内のセルを水セルに設定
     function setWaterInRange(centerCell, range) {
-        const rangeSquared = range * range * 20;
+        let rangeSquared;
+        if(range==1)
+        {
+            rangeSquared = 1;
+        }
+        else
+        {
+            rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+        }
         cells.forEach(cell => {
             const dx = cell.points[0][0] - centerCell.points[0][0];
             const dy = cell.points[0][1] - centerCell.points[0][1];
@@ -482,7 +501,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 範囲内のセルから水を抜く
     function removeWaterInRange(centerCell, range) {
-        const rangeSquared = range * range * 20;
+        let rangeSquared;
+        if(range==1)
+        {
+            rangeSquared = 1;
+        }
+        else
+        {
+            rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+        }
         cells.forEach(cell => {
             const dx = cell.points[0][0] - centerCell.points[0][0];
             const dy = cell.points[0][1] - centerCell.points[0][1];
@@ -491,6 +518,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // 指定された範囲のセルの標高を変更する関数
+    function handleElevationChange(centerCell, range) {
+        let rangeSquared;
+        if(range==1)
+        {
+            rangeSquared = 1;
+        }
+        else
+        {
+            rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+        }
+        const newElevation = parseFloat(modifyElevationSlider.value); // スライダー値を取得
+
+        cells.forEach(cell => {
+            const dx = cell.points[0][0] - centerCell.points[0][0];
+            const dy = cell.points[0][1] - centerCell.points[0][1];
+
+            // 範囲内のセルを対象に変更
+            if (dx * dx + dy * dy <= rangeSquared) {
+                cell.elevation = newElevation; // 標高を更新
+                cell.elevationColor = elevationToColor(newElevation); // 色を更新
+            }
+        });
+
+        drawCells(); // 再描画
+        console.log(`範囲内のセルの標高を ${newElevation} に変更しました`);
+    }
+
+
+    // スライダー値の変更をリアルタイムで反映する
+    modifyElevationSlider.addEventListener('input', () => {
+        if (currentMode === "modifyElevation") {
+            console.log(`スライダーの値: ${modifyElevationSlider.value}`);
+        }
+    });
+
+
+    // 標高を統一する処理
+    uniformElevationButton.addEventListener('click', () => {
+        const uniformElevation = parseFloat(elevationSlider.value);
+
+        // 全セルの標高をスライダーの値に統一
+        cells.forEach(cell => {
+            cell.elevation = uniformElevation;
+            cell.elevationColor = elevationToColor(uniformElevation);
+        });
+
+        drawCells(); // 地図を再描画
+        console.log(`全てのセルの標高を ${uniformElevation} に統一しました`);
+    });
 
     let autoMergeRunningFlg = false;
     // モーダルを表示する関数

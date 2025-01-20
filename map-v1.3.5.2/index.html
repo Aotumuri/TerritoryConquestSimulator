@@ -223,14 +223,27 @@
 
                 <p>※ 初期化後の地図は全て白色で、水の配置はありません。</p>
 
+                <div id="uniformElevationContainer">
+                    <label for="elevationSlider">標高の統一値:</label>
+                    <input type="range" id="elevationSlider" min="0" max="1" step="0.1" value="0.5">
+                    <button id="uniformElevationButton">標高を統一する</button>
+                </div>
+                
+
                 <div id="waterRangeContainer">
-                    <label for="waterRange">水を引く広さ:</label>
+                    <label for="waterRange">ペンの範囲:</label>
                     <input type="range" id="waterRange" min="1" max="20" value="1">
                 </div>
                 
                 <button id="toggleNoneModeButton">編集モードをやめる</button>
                 <button id="toggleWaterModeButton">水を追加モード</button>
                 <button id="toggleRemoveWaterModeButton">水を抜くモード</button>
+                <div id="modifyElevationSliderContainer">
+                    <label for="modifyElevationSlider">標高を選択:</label>
+                    <input type="range" id="modifyElevationSlider" min="0" max="1" step="0.1" value="0.5">
+                </div>                
+                <button id="modifyElevationModeButton">標高を変更するモード</button>
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
             </div>
 
             <!-- バージョン表示 -->
