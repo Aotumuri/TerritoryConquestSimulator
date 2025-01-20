@@ -484,19 +484,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 0.01;
+            centerCell.isWater = true;
+
         }
         else
         {
             rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+            cells.forEach(cell => {
+                const dx = cell.points[0][0] - centerCell.points[0][0];
+                const dy = cell.points[0][1] - centerCell.points[0][1];
+                if (dx * dx + dy * dy <= rangeSquared && !cell.isWater) {
+                    cell.isWater = true;
+                }
+            });
         }
-        cells.forEach(cell => {
-            const dx = cell.points[0][0] - centerCell.points[0][0];
-            const dy = cell.points[0][1] - centerCell.points[0][1];
-            if (dx * dx + dy * dy <= rangeSquared && !cell.isWater) {
-                cell.isWater = true;
-            }
-        });
     }
 
     // 範囲内のセルから水を抜く
@@ -504,19 +505,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 0.01;
+            centerCell.isWater = false;
         }
         else
         {
             rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+            cells.forEach(cell => {
+                const dx = cell.points[0][0] - centerCell.points[0][0];
+                const dy = cell.points[0][1] - centerCell.points[0][1];
+                if (dx * dx + dy * dy <= rangeSquared && cell.isWater) {
+                    cell.isWater = false;
+                }
+            });
         }
-        cells.forEach(cell => {
-            const dx = cell.points[0][0] - centerCell.points[0][0];
-            const dy = cell.points[0][1] - centerCell.points[0][1];
-            if (dx * dx + dy * dy <= rangeSquared && cell.isWater) {
-                cell.isWater = false;
-            }
-        });
     }
 
     // 指定された範囲のセルの標高を変更する関数
@@ -524,24 +525,25 @@ document.addEventListener('DOMContentLoaded', () => {
         let rangeSquared;
         if(range==1)
         {
-            rangeSquared = 0.01;
+            centerCell.elevation = newElevation; // 標高を更新
+            centerCell.elevationColor = elevationToColor(newElevation); // 色を更新
         }
         else
         {
             rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+            const newElevation = parseFloat(modifyElevationSlider.value); // スライダー値を取得
+    
+            cells.forEach(cell => {
+                const dx = cell.points[0][0] - centerCell.points[0][0];
+                const dy = cell.points[0][1] - centerCell.points[0][1];
+    
+                // 範囲内のセルを対象に変更
+                if (dx * dx + dy * dy <= rangeSquared) {
+                    cell.elevation = newElevation; // 標高を更新
+                    cell.elevationColor = elevationToColor(newElevation); // 色を更新
+                }
+            });
         }
-        const newElevation = parseFloat(modifyElevationSlider.value); // スライダー値を取得
-
-        cells.forEach(cell => {
-            const dx = cell.points[0][0] - centerCell.points[0][0];
-            const dy = cell.points[0][1] - centerCell.points[0][1];
-
-            // 範囲内のセルを対象に変更
-            if (dx * dx + dy * dy <= rangeSquared) {
-                cell.elevation = newElevation; // 標高を更新
-                cell.elevationColor = elevationToColor(newElevation); // 色を更新
-            }
-        });
     }
 
 
