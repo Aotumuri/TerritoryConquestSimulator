@@ -27,34 +27,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarButtons = document.querySelectorAll('#sidebar button'); // サイドバー内の全てのボタン
     const waterRangeSlider = document.getElementById('waterRange');
     const toggleRemoveWaterModeButton = document.getElementById('toggleRemoveWaterModeButton');
-    const useRandomNames = document.getElementById('useRandomNamesToggle').checked;
+    let useRandomNames = document.getElementById('useRandomNamesToggle').checked;
     let isWaterModeActive = false;
 
     // 名前リストの定義
     const prefixes = ["アルペルガ", "クログスタ", "ドルケスタ", "バルトラン", "エリタリア",
-        "オールグア","フルナスタ","ブルザリア","ロアノース","ドツロセン",//オーストリア　フランス　ブリタニア（イギリス） ロシア　ドイツ
-        "ニホロニア","ハルガスト","スペニシア","ポラノキガル","イテレシア"//日本　ハンガリー　スペイン　ポルトガル　イタリア
+        "オールグア", "フルナスタ", "ブルザリア", "ロアノース", "ドツロセン",//オーストリア　フランス　ブリタニア（イギリス） ロシア　ドイツ
+        "ニホロニア", "ハルガスト", "スペニシア", "ポラノキガル", "イテレシア"//日本　ハンガリー　スペイン　ポルトガル　イタリア
         // "カルガリズム","","","","" //カルガリズム
     ];
-    const suffixes = ["帝国", "王国", "共和国", "連邦共和国", "公国","二重帝国"];
+    const suffixes = ["帝国", "王国", "共和国", "連邦共和国", "公国", "二重帝国"];
 
     // ランダム名生成関数
     function generateRandomName() {
         const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
         const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-        return `${prefix} ${suffix}`;
+        return `${prefix}${suffix}`;
     }
 
-    // 各領地に名前を割り当てる関数
-    function assignNamesToRegions(cells, useRandomNames) {
+    // 色コードに対応する名前マップを生成
+    let colorToNameMap = {}; // 色コード → 国名のマッピング
+
+    function assignNamesToRegions(cells) {
+        colorToNameMap = {}; // 初期化（色と名前の対応を保持）
+        useRandomNames = document.getElementById('useRandomNamesToggle').checked;
+
         cells.forEach(cell => {
             if (useRandomNames) {
-                cell.name = generateRandomName();
+                // 色がまだマップに存在しない場合は新しい名前を生成してマップに追加
+                if (!colorToNameMap[cell.color]) {
+                    colorToNameMap[cell.color] = generateRandomName();
+                }
             } else {
-                cell.name = cell.color; // 色コードを名前に使用
+                // ランダム名を使用しない場合は色コードをそのまま名前として利用
+                if (!colorToNameMap[cell.color]) {
+                    colorToNameMap[cell.color] = `Color ${cell.color}`; // 色コードを名前として使用
+                }
             }
         });
-        console.log("領地名が設定されました:", cells.map(cell => cell.name));
+
+        console.log("色と名前の対応が設定されました:", colorToNameMap); // デバッグ用
+    }
+
+    function getOrCreateNameForColor(color, useRandomNames) {
+        // 名前が既に存在する場合はそれを返す
+        if (colorToNameMap[color]) {
+            return colorToNameMap[color];
+        }
+
+        // 名前が存在しない場合、ランダム生成するか、色コードを名前にする
+        let name;
+        if (useRandomNames) {
+            name = generateRandomName(); // ランダム名を生成
+        } else {
+            name = `Color ${color}`; // 色コードをそのまま名前として使用
+        }
+
+        // マップに新しい名前を登録
+        colorToNameMap[color] = name;
+
+        return name; // 生成した名前を返す
     }
 
     // 領地名表示のサンプル（キャンバスに描画）
@@ -65,24 +97,29 @@ document.addEventListener('DOMContentLoaded', () => {
         cells.forEach(cell => {
             const centroid = getCellCentroid(cell);
             if (centroid) {
-                ctx.fillText(cell.name, centroid.x, centroid.y);
+                const regionName = colorToNameMap[cell.color]; // マップから名前を取得
+                if (regionName) {
+                    ctx.fillText(regionName, centroid.x, centroid.y);
+                }
             }
-    });}
+        });
+    }
+
 
     // セルの重心を計算する関数
-function getCellCentroid(cell) {
-    if (!cell.points || cell.points.length === 0) return null;
-    const { x, y } = cell.points.reduce((acc, point) => {
-        acc.x += point[0];
-        acc.y += point[1];
-        return acc;
-    }, { x: 0, y: 0 });
+    function getCellCentroid(cell) {
+        if (!cell.points || cell.points.length === 0) return null;
+        const { x, y } = cell.points.reduce((acc, point) => {
+            acc.x += point[0];
+            acc.y += point[1];
+            return acc;
+        }, { x: 0, y: 0 });
 
-    return {
-        x: x / cell.points.length,
-        y: y / cell.points.length,
-    };
-}
+        return {
+            x: x / cell.points.length,
+            y: y / cell.points.length,
+        };
+    }
 
 
 
@@ -191,6 +228,7 @@ function getCellCentroid(cell) {
             document.getElementById('elevationToggle').checked = true;
             document.getElementById('waterToggle').checked = true;
             document.getElementById('disableWaterCitiesToggle').checked = true;
+            document.getElementById('useRandomNamesToggle').checked = true;
         } else {
             // 他のプリセットを設定
             const preset = presets[presetName];
@@ -274,36 +312,36 @@ function getCellCentroid(cell) {
         // 入力されたステート数と基本標高を取得
         const numCells = parseInt(document.getElementById('initialNumCells').value);
         const initialElevation = parseFloat(document.getElementById('initialElevation').value);
-    
+
         // 地図を初期化
         initializeMap(numCells, initialElevation);
     });
-    
+
     // 地図を初期化する関数
     function initializeMap(numCells, elevation) {
         // グローバルセルデータを初期化
         cells = generateVoronoiCells(numCells, canvas.width, canvas.height);
-    
+
         cells.forEach(cell => {
             // 標高を指定された値に設定
             cell.elevation = elevation;
             cell.elevationColor = elevationToColor(elevation);
-    
+
             // 色を全て白に設定
             cell.color = '#FFFFFF';
-    
+
             // 水セルフラグをリセット
             cell.isWater = false;
         });
-    
+
         // 首都や都市データをリセット
         capitals.clear();
         cities = [];
-        
+
         window.cells = cells;
 
-        assignNamesToRegions(cells, useRandomNames);
-    
+        assignNamesToRegions(cells);
+
         // 地図を再描画
         drawCells();
     }
@@ -311,118 +349,118 @@ function getCellCentroid(cell) {
     let currentMode = "none"; // 初期状態（操作なし）
 
     // ボタンのイベントリスナー
-toggleWaterModeButton.addEventListener('click', () => {
-    setMode("addWater");
-});
-
-toggleRemoveWaterModeButton.addEventListener('click', () => {
-    setMode("removeWater");
-});
-
-toggleNoneModeButton.addEventListener('click', () => {
-    setMode("none");
-});
-
-// モード切り替え関数
-function setMode(mode) {
-    currentMode = mode;
-
-    // ボタンのUIを更新
-    toggleWaterModeButton.classList.toggle('active_edit', currentMode === "addWater");
-    toggleRemoveWaterModeButton.classList.toggle('active_edit', currentMode === "removeWater");
-
-    // キャンバスのカーソルを変更
-    canvas.style.cursor = currentMode !== "none" ? "pointer" : "default";
-
-    // モードが操作モードの場合、キャンバスイベントを有効化
-    if (currentMode === "addWater" || currentMode === "removeWater") {
-        isCanvasStopped = true;
-        enableCanvasInteraction();
-    } else {
-        isCanvasStopped = false;
-        disableCanvasInteraction();
-    }
-}
-
-// キャンバスイベントの有効化
-function enableCanvasInteraction() {
-    canvas.addEventListener('mousedown', startInteraction);
-    canvas.addEventListener('mousemove', continueInteraction);
-    canvas.addEventListener('mouseup', stopInteraction);
-}
-
-// キャンバスイベントの無効化
-function disableCanvasInteraction() {
-    canvas.removeEventListener('mousedown', startInteraction);
-    canvas.removeEventListener('mousemove', continueInteraction);
-    canvas.removeEventListener('mouseup', stopInteraction);
-}
-
-// 操作モードに応じたクリック・ドラッグの処理
-let isInteracting = false;
-
-function startInteraction(event) {
-    if (event.metaKey || event.ctrlKey) return; // Command/Ctrlが押されている場合は無効化
-    isInteracting = true;
-    handleInteraction(event); // 最初の操作を実行
-}
-
-function continueInteraction(event) {
-    if (!isInteracting) return;
-    handleInteraction(event); // ドラッグ中の操作を実行
-}
-
-function stopInteraction() {
-    isInteracting = false; // 操作終了
-}
-
-// 操作の実行
-function handleInteraction(event) {
-    const rect = canvas.getBoundingClientRect();
-    const cssX = event.clientX - rect.left;
-    const cssY = event.clientY - rect.top;
-
-    // キャンバスの描画座標系に変換
-    const mapX = (cssX - origin.x) / scale;
-    const mapY = (cssY - origin.y) / scale;
-
-    // 該当するセルを検索
-    const clickedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
-
-    if (clickedCell) {
-        const range = parseInt(waterRangeSlider.value); // スライダー値を取得
-        if (currentMode === "addWater") {
-            setWaterInRange(clickedCell, range); // 水を追加
-        } else if (currentMode === "removeWater") {
-            removeWaterInRange(clickedCell, range); // 水を抜く
-        }
-        drawCells(); // 地図の再描画
-    }
-}
-
-// 範囲内のセルを水セルに設定
-function setWaterInRange(centerCell, range) {
-    const rangeSquared = range * range * 20;
-    cells.forEach(cell => {
-        const dx = cell.points[0][0] - centerCell.points[0][0];
-        const dy = cell.points[0][1] - centerCell.points[0][1];
-        if (dx * dx + dy * dy <= rangeSquared && !cell.isWater) {
-            cell.isWater = true;
-        }
+    toggleWaterModeButton.addEventListener('click', () => {
+        setMode("addWater");
     });
-}
 
-// 範囲内のセルから水を抜く
-function removeWaterInRange(centerCell, range) {
-    const rangeSquared = range * range * 20;
-    cells.forEach(cell => {
-        const dx = cell.points[0][0] - centerCell.points[0][0];
-        const dy = cell.points[0][1] - centerCell.points[0][1];
-        if (dx * dx + dy * dy <= rangeSquared && cell.isWater) {
-            cell.isWater = false;
-        }
+    toggleRemoveWaterModeButton.addEventListener('click', () => {
+        setMode("removeWater");
     });
-}
+
+    toggleNoneModeButton.addEventListener('click', () => {
+        setMode("none");
+    });
+
+    // モード切り替え関数
+    function setMode(mode) {
+        currentMode = mode;
+
+        // ボタンのUIを更新
+        toggleWaterModeButton.classList.toggle('active_edit', currentMode === "addWater");
+        toggleRemoveWaterModeButton.classList.toggle('active_edit', currentMode === "removeWater");
+
+        // キャンバスのカーソルを変更
+        canvas.style.cursor = currentMode !== "none" ? "pointer" : "default";
+
+        // モードが操作モードの場合、キャンバスイベントを有効化
+        if (currentMode === "addWater" || currentMode === "removeWater") {
+            isCanvasStopped = true;
+            enableCanvasInteraction();
+        } else {
+            isCanvasStopped = false;
+            disableCanvasInteraction();
+        }
+    }
+
+    // キャンバスイベントの有効化
+    function enableCanvasInteraction() {
+        canvas.addEventListener('mousedown', startInteraction);
+        canvas.addEventListener('mousemove', continueInteraction);
+        canvas.addEventListener('mouseup', stopInteraction);
+    }
+
+    // キャンバスイベントの無効化
+    function disableCanvasInteraction() {
+        canvas.removeEventListener('mousedown', startInteraction);
+        canvas.removeEventListener('mousemove', continueInteraction);
+        canvas.removeEventListener('mouseup', stopInteraction);
+    }
+
+    // 操作モードに応じたクリック・ドラッグの処理
+    let isInteracting = false;
+
+    function startInteraction(event) {
+        if (event.metaKey || event.ctrlKey) return; // Command/Ctrlが押されている場合は無効化
+        isInteracting = true;
+        handleInteraction(event); // 最初の操作を実行
+    }
+
+    function continueInteraction(event) {
+        if (!isInteracting) return;
+        handleInteraction(event); // ドラッグ中の操作を実行
+    }
+
+    function stopInteraction() {
+        isInteracting = false; // 操作終了
+    }
+
+    // 操作の実行
+    function handleInteraction(event) {
+        const rect = canvas.getBoundingClientRect();
+        const cssX = event.clientX - rect.left;
+        const cssY = event.clientY - rect.top;
+
+        // キャンバスの描画座標系に変換
+        const mapX = (cssX - origin.x) / scale;
+        const mapY = (cssY - origin.y) / scale;
+
+        // 該当するセルを検索
+        const clickedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
+
+        if (clickedCell) {
+            const range = parseInt(waterRangeSlider.value); // スライダー値を取得
+            if (currentMode === "addWater") {
+                setWaterInRange(clickedCell, range); // 水を追加
+            } else if (currentMode === "removeWater") {
+                removeWaterInRange(clickedCell, range); // 水を抜く
+            }
+            drawCells(); // 地図の再描画
+        }
+    }
+
+    // 範囲内のセルを水セルに設定
+    function setWaterInRange(centerCell, range) {
+        const rangeSquared = range * range * 20;
+        cells.forEach(cell => {
+            const dx = cell.points[0][0] - centerCell.points[0][0];
+            const dy = cell.points[0][1] - centerCell.points[0][1];
+            if (dx * dx + dy * dy <= rangeSquared && !cell.isWater) {
+                cell.isWater = true;
+            }
+        });
+    }
+
+    // 範囲内のセルから水を抜く
+    function removeWaterInRange(centerCell, range) {
+        const rangeSquared = range * range * 20;
+        cells.forEach(cell => {
+            const dx = cell.points[0][0] - centerCell.points[0][0];
+            const dy = cell.points[0][1] - centerCell.points[0][1];
+            if (dx * dx + dy * dy <= rangeSquared && cell.isWater) {
+                cell.isWater = false;
+            }
+        });
+    }
 
     let autoMergeRunningFlg = false;
     // モーダルを表示する関数
@@ -468,7 +506,8 @@ function removeWaterInRange(centerCell, range) {
             elevationToggle: document.getElementById('elevationToggle').checked,
             waterToggle: document.getElementById('waterToggle').checked,
             disableWaterCitiesToggle: document.getElementById('disableWaterCitiesToggle').checked,
-            oceanSlider: document.getElementById('oceanSlider').value
+            oceanSlider: document.getElementById('oceanSlider').value,
+            useRandomNames: document.getElementById('useRandomNamesToggle').checked
         };
 
         const mapData = {
@@ -486,7 +525,8 @@ function removeWaterInRange(centerCell, range) {
             })),
             cities: cities.map(city => cells.indexOf(city)),
             settings: settings,
-            expansionMultipliers: expansionMultipliers
+            expansionMultipliers: expansionMultipliers,
+            colorToNameMap: colorToNameMap
         };
 
         return mapData;
@@ -530,8 +570,11 @@ function removeWaterInRange(centerCell, range) {
         document.getElementById('waterToggle').checked = settings.waterToggle;
         document.getElementById('disableWaterCitiesToggle').checked = settings.disableWaterCitiesToggle;
         document.getElementById('oceanSlider').value = settings.oceanSlider;
+        document.getElementById('useRandomNamesToggle').checked = settings.useRandomNames;
 
         expansionMultipliers = mapData.expansionMultipliers;
+
+        colorToNameMap = mapData.colorToNameMap;
 
         // 地図の再描画
         showBordersOnly = settings.showBordersOnly;
@@ -692,7 +735,7 @@ function removeWaterInRange(centerCell, range) {
         }
 
         console.log('命名');
-        assignNamesToRegions(cells, useRandomNames);
+        assignNamesToRegions(cells);
 
         console.log('セルを描画');
         drawCells();
@@ -1373,7 +1416,7 @@ function removeWaterInRange(centerCell, range) {
             setCapitalsForSpecialGeneration();
         }
 
-        assignNamesToRegions(cells, useRandomNames);
+        assignNamesToRegions(cells);
         drawCells(); // Redraw the updated map
         updateColorRanking(); // Ensure ranking is updated after color changes
     }
@@ -1602,14 +1645,14 @@ function removeWaterInRange(centerCell, range) {
     function addMapLog(color, message, defenderColor = null) {
         // 白色のログは無視
         if (color.toLowerCase() === '#ffffff' || (defenderColor && defenderColor.toLowerCase() === '#ffffff')) return;
-    
+
         const logList = document.getElementById('logList');
         const logItem = document.createElement('li');
-    
+
         // 国名を取得
         const attackerName = getCountryNameByColor(color);
         const defenderName = defenderColor ? getCountryNameByColor(defenderColor) : null;
-    
+
         if (defenderColor) {
             logItem.innerHTML = `
                 <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
@@ -1626,25 +1669,25 @@ function removeWaterInRange(centerCell, range) {
                 <span>${message}</span>
             `;
         }
-    
+
         // 最新のログを上に追加
         logList.insertBefore(logItem, logList.firstChild);
-    
+
         // ログの保存数を取得し、超過分を削除
         const logLimitInput = document.getElementById('logLimit');
         const logLimit = parseInt(logLimitInput.value) || 10;
-    
+
         while (logList.children.length > logLimit) {
             logList.removeChild(logList.lastChild); // 最も古いログを削除
         }
     }
-    
+
     // 国名を取得する関数
     function getCountryNameByColor(color) {
         const cell = cells.find(c => c.color.toLowerCase() === color.toLowerCase());
-        return cell && cell.name ? cell.name : "不明";
+        return cell && getOrCreateNameForColor(cell.color, useRandomNames) ? getOrCreateNameForColor(cell.color, useRandomNames) : "不明";
     }
-    
+
 
     // タブを表示する関数
     function showTab(tabId) {
@@ -1673,38 +1716,38 @@ function removeWaterInRange(centerCell, range) {
     function updateColorRanking() {
         colorCount = {};
         const cells = window.cells || [];
-    
+
         // 各セルの色をカウント
         cells.forEach(cell => {
             if (!cell || !cell.color) return;
             colorCount[cell.color] = (colorCount[cell.color] || 0) + 1;
         });
-    
+
         // 表示する上位数を設定（デフォルトは10）
         const topCountInput = document.getElementById('topCount');
         const topCount = topCountInput ? parseInt(topCountInput.value) || 10 : 10;
-    
+
         console.log(colorCount);
-    
+
         // 領地数の多い順にソートし、指定した数だけ取得
         const sortedColors = Object.entries(colorCount)
             .sort((a, b) => b[1] - a[1])
             .slice(0, topCount);
-    
+
         // リストを表示する要素を取得
         const rankingList = document.getElementById('rankingList');
         rankingList.innerHTML = ""; // 一度内容をクリア
-    
+
         // ソートされた色と領地数を <p> 要素で表示
         sortedColors.forEach(([color, count]) => {
             // 拡張倍率を取得し、実質領地数を計算
             const multiplier = expansionMultipliers[color] || 1; // 倍率（初期値1）
             const adjustedCount = count * multiplier; // 実質領地数
-    
+
             // 国名を取得（対応するセルから）
             const cell = cells.find(c => c.color === color);
-            const countryName = cell && cell.name ? cell.name : "不明";
-    
+            const countryName = cell && getOrCreateNameForColor(cell.color, useRandomNames) ? getOrCreateNameForColor(cell.color, useRandomNames) : "不明";
+
             // ランキング項目を作成
             const listItem = document.createElement('p');
             if (expansionMultipliers[color] == 1) {
@@ -1721,7 +1764,7 @@ function removeWaterInRange(centerCell, range) {
             }
             rankingList.appendChild(listItem);
         });
-    }    
+    }
 
 
     // グローバルにアクセスできるように関数を window に追加
