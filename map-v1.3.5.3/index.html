@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="TCS.webp" type="image/png">
+    <title>TerritoryConquestSimulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <!-- キャンバスエリア -->
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+        <!-- サイドバー -->
+        <div id="sidebar">
+            <a href="../index.html" id="homeIcon">
+                <img src="TCS.webp" alt="ホームアイコン">
+            </a>
+            <h3>TerritoryConquestSimulator</h3>
+            <!-- タブメニュー -->
+            <div id="tabMenu">
+                <div class="tabRow">
+                    <button class="tabButton" onclick="showTab('settingsTab')">地図設定</button>
+                    <button class="tabButton" onclick="showTab('statusTab')">地図状況</button>
+                </div>
+                <div class="tabRow">
+                    <button class="tabButton" onclick="showTab('createTab')">地図作成</button>
+                    <button class="tabButton" onclick="showTab('infoTab')">説明</button>
+                </div>
+            </div>
+            
+            <!-- 地図設定タブの内容 -->
+            <div id="settingsTab" class="tabContent">
+                <h2>地図設定</h2>
+                <br>
+                <h3>プリセット</h3>
+                <button onclick="applyPreset('default')">デフォルト設定</button>
+                <button onclick="applyPreset('large')">大きな地図</button>
+                <button onclick="applyPreset('dense')">もっと大きな地図</button>
+                <button onclick="applyPreset('random')">ランダムパターン</button>
+                <button onclick="applyPreset('test')">テスト用パターン</button>
+                <button onclick="applyPreset('test2')">テスト用パターン2<br>おすすめ！押すだけ！</button>
+                <div id="specialGeneration">
+                    <h3>特殊生成リスト</h3>
+                    <button onclick="applySpecialGeneration('whiteWithFourColors')">四つ巴</button>
+                    <button onclick="applySpecialGeneration('battleRoyale')">バトロアモード<br>(100 Random Colors)</button>
+                    <button onclick="applySpecialGeneration('battleRoyale2')">バトロアモード<br>(250 Random Colors)</button>
+                </div>
+
+
+                <br>
+                <h3>領地設定</h3>
+                <label for="elevationToggle">標高を使用する</label>
+                <input type="checkbox" id="elevationToggle"><br>
+                <label for="waterToggle">水を使用する</label>
+                <input type="checkbox" id="waterToggle"><br>
+                <div class="slider-container">
+                    <label for="oceanSlider">海の生成深さ:</label><br>
+                    <input type="range" id="oceanSlider" min="0" max="0.7" step="0.1" value="0.3">
+                </div>            
+                <label for="capitalToggle">首都を設置する</label>
+                <input type="checkbox" id="capitalToggle"><br>
+                <label for="cityToggle">都市を配置する</label>
+                <input type="checkbox" id="cityToggle">
+                <div id="cityRequirementContainer" style="display: none;">
+                    <label for="cityRequirement">都市を配置するのに必要な<br>最低のステート数:</label>
+                    <input type="number" id="cityRequirement" value="10" min="1">
+                </div><br>
+                <label for="disableWaterCitiesToggle">水上都市を禁止</label>
+                <input type="checkbox" id="disableWaterCitiesToggle"><br>
+
+                
+                <label for="useRandomNamesToggle">ランダムな国名を使用</label>
+                <input type="checkbox" id="useRandomNamesToggle" checked>
+                <br>
+
+                <div id="expansionMultiplierControls">
+                    <h3>領土操作</h3>
+                    <label for="colorPicker">選択中のセル:</label>
+                    <input type="color" id="colorPicker" value="#ffffff">       
+                    <h4>倍率の変更</h4>
+                    <label for="multiplierInput">倍率:</label>
+                    <input type="number" id="multiplierInput" min="0" value="1" step="0.1">
+                    <button id="setMultiplierButton">倍率を適用</button>
+                </div><br>
+
+                <h3>地図操作</h3>
+                <!-- <button id="saveButton">設定を保存</button>
+                <button id="loadButton">設定をロード</button><br> -->
+
+                <button id="saveloadMapButton">地図をセーブ/ロード</button>
+
+                <div id="saveLoadModal" class="modal">
+                    <div class="modal-content">
+                        <button id="saveToCache">キャッシュにセーブ</button>
+                        <button id="saveToFile">ファイルにセーブ(設定も含む)</button>
+                        <button id="loadFromCache">キャッシュからロード</button>
+                        <button id="loadFromFile">ファイルからロード(設定も含む)</button>
+                        <button id="closeModal">閉じる</button>
+                    </div>
+                </div>
+
+
+                <label for="numCells">ステートの数: </label>
+                <input type="number" id="numCells" value="1000" min="10" max="10000"><br>
+
+                <label for="mergeIterations">吸収回数: </label>
+                <input type="number" id="mergeIterations" value="0" min="1" max="500"><br>
+
+                <label for="tickInterval">吸収間隔 (ミリ秒): </label>
+                <input type="number" id="tickInterval" value="50" min="10" max="10000"><br>
+
+                <button id="regenerateButton">再生成</button>
+
+                <button id="singleMergeButton">吸収を一回実行</button>
+                <button id="multiMergeButton">指定数吸収を実行</button>
+                <button id="toggleAutoMergeButton">自動吸収開始/停止</button><br>
+
+                <label for="randomAbsorptionToggle">たまにランダム吸収を挟む</label>
+                <input type="checkbox" id="randomAbsorptionToggle"><br>
+
+                <label for="absorptionPattern">吸収パターン: </label>
+                <select id="absorptionPattern">
+                    <!-- <option value="random">ランダム吸収</option> -->
+                    <option value="majority">多数決吸収(安定しやすい)</option>
+                    <option value="weighted" selected>重み付き吸収</option>
+                    <option value="combined">重み付き多数決吸収</option>
+                    <option value="modified-weighted" id="modifiedWeightedOption" >修正重みつき吸収</option>
+                    <option value="global-modified-weighted" id="modifiedWeightedOption" >全体修正重みつき吸収</option>
+                    <option value="custom-weighted" id="modifiedWeightedOption" >分配修正全体重み付き吸収</option>
+                </select><br>
+
+                <br>
+                <h3>表示設定</h3>
+                <label for="showBordersOnlyToggle">国境のみに線を表示</label>
+                <input type="checkbox" id="showBordersOnlyToggle">
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- 地図状況タブの内容 -->
+            <div id="statusTab" class="tabContent" style="display: none;">
+                <h2>地図状況</h2>
+                <label for="topCount">表示する上位数:</label>
+                <input type="number" id="topCount" value="10" min="1" style="width: 60px;">
+                <button onclick="updateColorRanking()">ランキング更新</button>
+            
+                <div id="colorRanking">
+                    <div id="rankingList"></div>
+                </div>
+
+                <label for="logLimit">地図ログの保存数:</label>
+                <input type="number" id="logLimit" value="100" min="10" style="width: 60px;">
+                <div id="mapLog">
+                    <h3>地図ログ</h3>
+                    <ul id="logList"></ul>
+                </div>
+                <br>
+                <div id="colorAdjacencyRanking">
+                    <h3>接している色ランキング</h3>
+                    <table id="adjacencyTable" border="1">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>色</th>
+                                <th>接している色数</th>
+                                <th>隣接色</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- ランキングデータがここに挿入されます　ほんとだよ？ -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- 説明タブの内容 -->
+            <div id="infoTab" class="tabContent" style="display: none;">
+                <h2>使い方</h2>
+                <h2>地図設定</h2>
+                <h3>プリセット</h3>
+                <p>製作者が実験で使ったりするプリセットです。<br>ランダムプリセットはランダムな設定に変わります。</p>
+                <h3>領地設定</h3>
+                <p>標高は差があれば攻めにくくなり攻めやすくなる要素です。画面では黒が濃くなると標高が高くなります。</p>
+                <p>水がある領地は攻めにくくなります。画面で青く表示されるものです。</p>
+                <p>海の深さは標高が低い順に水を引く最低値です。高ければ高いほど海が広くなります。</p>
+                <p>首都は赤い枠で囲われているステートのことを指します。それが他の色に奪われると滅亡してしまいます。</p>
+                <p>その際、都市（青い枠がつくステート）がある場合、首都を都市に移転させます。</p>
+                <p>水上都市を禁止とは、水のあるプロットの上に都市が生成されることを防ぎます。</p>
+                <h3>領地操作</h3>
+                <p>画面のステートをクリックして選択し、吸収倍率を上げます。</p>
+                <p>吸収倍率は、『全体修正重み付き吸収』と『分配全体修正重み付き吸収』でのみ機能します。</p>
+                <h3>地図操作</h3>
+                <p>吸収回数は再生成をした時に元から何回吸収工程を踏むかを示します。</p>
+                <p>指定数吸収は吸収回数を参照して吸収します。</p>
+                <h3>吸収パターン</h3>
+                <dev>
+                    <!-- <b>ランダム吸収:</b><br><p>ランダムに吸収します。</p> -->
+                    <b>多数決吸収:</b><br><p>自分に接する最も多いステートに変わります。</p>
+                    <b>重み付き吸収:</b><br><p>自分に接するステートを数え上げ、多い順にランダムに変わります。</p>
+                    <b>修正重み付き吸収:</b><br><p>重み付き吸収に加え、ステートの差が圧倒的な場合はそのステートに変わります。</p>
+                    <b>全体修正重み付き吸収:</b><br><p>修正重み付き吸収に加え、地図の全てのステートの数を関連させて動きます。多ければ強いです。</p>
+                    <b>分配全体修正重み付き吸収:</b><br><p>修正重み付き吸収に加え、地図の全てのステートの接続数を関連させて動きます。接してると弱いです。</p>
+                </dev>
+                <h3>表示設定</h3>
+                <p>色の違うステートの間にのみ黒い線を描きます。</p>
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- 地図作成タブの内容 -->
+            <div id="createTab" class="tabContent" style="display: none;">
+                <h2>地図作成</h2>
+                <!-- ステート数と基本標高を入力 -->
+                <label for="initialNumCells">ステートの数: </label>
+                <input type="number" id="initialNumCells" value="1000" min="10" max="10000"><br>
+
+                <label for="initialElevation">基本標高 (0〜1): </label>
+                <input type="number" id="initialElevation" value="0.5" step="0.1" min="0" max="1"><br><br>
+
+                <!-- 地図初期化ボタン -->
+                <button id="initializeMapButton">地図を初期化する</button>
+
+                <p>※ 初期化後の地図は全て白色で、水の配置はありません。</p>
+
+                <div id="uniformElevationContainer">
+                    <label for="elevationSlider">標高の統一値:</label>
+                    <input type="range" id="elevationSlider" min="0" max="1" step="0.1" value="0.5">
+                    <button id="uniformElevationButton">標高を統一する</button>
+                </div>
+                
+
+                <div id="waterRangeContainer">
+                    <label for="waterRange">ペンの範囲:</label>
+                    <input type="range" id="waterRange" min="1" max="20" value="1">
+                </div>
+                
+                <button id="toggleNoneModeButton">編集モードをやめる</button>
+                <button id="toggleWaterModeButton">水を追加モード</button>
+                <button id="toggleRemoveWaterModeButton">水を抜くモード</button>
+                <div id="modifyElevationSliderContainer">
+                    <label for="modifyElevationSlider">標高を選択:</label>
+                    <input type="range" id="modifyElevationSlider" min="0" max="1" step="0.1" value="0.5">
+                </div>                
+                <button id="modifyElevationModeButton">標高を変更するモード</button>
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+            </div>
+
+            <!-- バージョン表示 -->
+            <div id="versionLabel">陣取り合戦シミュレータ v1.3.5.3<br>by ChatGPT & Aotumuri</div>
+        </div>
+    </div>
+
+    <!-- d3-delaunay CDN -->
+    <script src="https://unpkg.com/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+    <script src="script.js"></script>
+    <!-- <script src="d3-delaunay.min.js"></script> -->
+</body>
+</html>
