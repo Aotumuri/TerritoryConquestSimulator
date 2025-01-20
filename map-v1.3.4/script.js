@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 名前リストの定義
     const prefixes = ["アルペルガ", "クログスタ", "ドルケスタ", "バルトラン", "エリタリア",
         "オールグア","フルナスタ","ブルザリア","ロアノース","ドツロセン",//オーストリア　フランス　ブリタニア（イギリス） ロシア　ドイツ
-        "ニホロニア","ハルガスト","スペニシア","ポラノキガル","イテレシア",//日本　ハンガリー　スペイン　ポルトガル　イタリア
-        "カルガリズム","","","","" //カルガリズム
+        "ニホロニア","ハルガスト","スペニシア","ポラノキガル","イテレシア"//日本　ハンガリー　スペイン　ポルトガル　イタリア
+        // "カルガリズム","","","","" //カルガリズム
     ];
     const suffixes = ["帝国", "王国", "共和国", "連邦共和国", "公国","二重帝国"];
 
@@ -1612,17 +1612,17 @@ function removeWaterInRange(centerCell, range) {
     
         if (defenderColor) {
             logItem.innerHTML = `
-                <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 5px;"></span>
+                <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
                 <span>${attackerName}</span>
-                <span>が</span>
+                <span>が</span><br>
                 <span class="color-box" style="background-color: ${defenderColor}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 5px;"></span>
-                <span>${defenderName}</span>
+                <span>${defenderName}</span><br>
                 <span>${message}</span>
             `;
         } else {
             logItem.innerHTML = `
                 <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
-                <span>${attackerName}</span>
+                <span>${attackerName}</span><br>
                 <span>${message}</span>
             `;
         }
@@ -1710,12 +1710,12 @@ function removeWaterInRange(centerCell, range) {
             if (expansionMultipliers[color] == 1) {
                 listItem.innerHTML = `
                     <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
-                    <span>${countryName} (${color}): ${count} 領地</span>
+                    <br><span>${countryName} (${color}):<br> ${count} 領地</span>
                 `;
             } else {
                 listItem.innerHTML = `
                     <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
-                    <span>${countryName} (${color}): ${count} 領地</span>
+                    <br><span>${countryName} (${color}): <br>${count} 領地</span><br>
                     <span style="margin-left: 10px;">(倍率: ${multiplier.toFixed(2)}, 実質: ${adjustedCount.toFixed(2)} 領地)</span>
                 `;
             }
