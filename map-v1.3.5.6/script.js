@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const uniformElevationButton = document.getElementById('uniformElevationButton');
     const modifyElevationSlider = document.getElementById('modifyElevationSlider');
     const modifyElevationModeButton = document.getElementById('modifyElevationModeButton');
+
     let isWaterModeActive = false;
 
     // 名前リストの定義
@@ -263,6 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('waterToggle').checked = true;
             document.getElementById('disableWaterCitiesToggle').checked = true;
             document.getElementById('useRandomNamesToggle').checked = true;
+            document.getElementById('elevationbuffToggle').checked = true;
+            document.getElementById('elevationbuffNumber').value = 0.7;
         } else {
             // 他のプリセットを設定
             const preset = presets[presetName];
@@ -1137,6 +1140,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // 孤立しているかの判定
         // const isIsolated = !neighborColors.includes(selfColor);
         if (pattern === 'custom-weighted') {
+            const elevationbuffToggle = document.getElementById('elevationbuffToggle');
+            const elevationbuffNumber = document.getElementById('elevationbuffNumber');
+            if(elevationbuffToggle.checked && cells[selfIndex]?.elevation >= elevationbuffNumber.value)
+            {
+                if (Math.random() < 0.5) {
+                    return selfColor;
+                }
+            }
+
             const selfColorCount = colorCounts[selfColor] || 0;
             // colorCounts から最も頻度の高い色を取得
             let dominantColor = Object.keys(colorCounts).reduce((a, b) =>
