@@ -617,7 +617,11 @@ document.addEventListener('DOMContentLoaded', () => {
             waterToggle: document.getElementById('waterToggle').checked,
             disableWaterCitiesToggle: document.getElementById('disableWaterCitiesToggle').checked,
             oceanSlider: document.getElementById('oceanSlider').value,
-            useRandomNames: document.getElementById('useRandomNamesToggle').checked
+            useRandomNames: document.getElementById('useRandomNamesToggle').checked,
+            elevationbuffNumber: document.getElementById('elevationbuffNumber').value,
+            elevationbuffToggle: document.getElementById('elevationbuffToggle').checked,
+            elevationbuffNumber_2: document.getElementById('elevationbuffNumber_2').value,
+            elevationbuffToggle_2: document.getElementById('elevationbuffToggle_2').checked
         };
 
         const mapData = {
@@ -681,6 +685,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('disableWaterCitiesToggle').checked = settings.disableWaterCitiesToggle;
         document.getElementById('oceanSlider').value = settings.oceanSlider;
         document.getElementById('useRandomNamesToggle').checked = settings.useRandomNames;
+        document.getElementById('elevationbuffNumber').values = settings.elevationbuffNumber;
+        document.getElementById('elevationbuffToggle').checked = settings.elevationbuffToggle;
+        document.getElementById('elevationbuffNumber_2').values = settings.elevationbuffNumber_2;
+        document.getElementById('elevationbuffToggle_2').checked = settings.elevationbuffToggle_2;
 
         expansionMultipliers = mapData.expansionMultipliers;
 
@@ -1140,15 +1148,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // 孤立しているかの判定
         // const isIsolated = !neighborColors.includes(selfColor);
         if (pattern === 'custom-weighted') {
-            const elevationbuffToggle = document.getElementById('elevationbuffToggle');
-            const elevationbuffNumber = document.getElementById('elevationbuffNumber');
+            let elevationbuffToggle = document.getElementById('elevationbuffToggle');
+            let elevationbuffNumber = document.getElementById('elevationbuffNumber');
             if(elevationbuffToggle.checked && cells[selfIndex]?.elevation >= elevationbuffNumber.value)
             {
                 if (Math.random() < 0.5) {
                     return selfColor;
                 }
             }
-
+            elevationbuffToggle = document.getElementById('elevationbuffToggle_2');
+            elevationbuffNumber = document.getElementById('elevationbuffNumber_2');
+            if(elevationbuffToggle.checked && cells[selfIndex]?.elevation >= elevationbuffNumber.value)
+            {
+                if (Math.random() < 0.5) {
+                    return selfColor;
+                }
+            }
             const selfColorCount = colorCounts[selfColor] || 0;
             // colorCounts から最も頻度の高い色を取得
             let dominantColor = Object.keys(colorCounts).reduce((a, b) =>
