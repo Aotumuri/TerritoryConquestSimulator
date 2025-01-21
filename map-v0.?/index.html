@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Generator</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+    </div>
+    <script>
+        const getRandomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+
+        const generateInitialPolygon = (xOffset, yOffset, width, height, numPoints = 6) => {
+            let points = [];
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (i / numPoints) * 2 * Math.PI;
+                const radiusX = width / 2 * (0.7 + Math.random() * 0.6);
+                const radiusY = height / 2 * (0.7 + Math.random() * 0.6);
+                points.push({
+                    x: xOffset + width / 2 + Math.cos(angle) * radiusX,
+                    y: yOffset + height / 2 + Math.sin(angle) * radiusY
+                });
+            }
+            return points;
+        };
+
+        const randomizePolygon = (points) => {
+            return points.map(point => {
+                const offset = 20; // ランダムなオフセット
+                return {
+                    x: point.x + (Math.random() - 0.5) * offset,
+                    y: point.y + (Math.random() - 0.5) * offset
+                };
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('mapCanvas');
+            const ctx = canvas.getContext('2d');
+            let states = [
+                {
+                    color: getRandomColor(),
+                    points: generateInitialPolygon(0, 0, canvas.width, canvas.height)
+                }
+            ];
+
+            const drawMap = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                states.forEach(state => {
+                    ctx.fillStyle = state.color;
+                    drawPolygon(state.points);
+                });
+            };
+
+            const drawPolygon = (points) => {
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                points.forEach(point => {
+                    ctx.lineTo(point.x, point.y);
+                });
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            };
+
+            const subdivideState = () => {
+                let newStates = [];
+                states.forEach(state => {
+                    const { points } = state;
+                    const centroid = points.reduce((acc, point) => {
+                        acc.x += point.x;
+                        acc.y += point.y;
+                        return acc;
+                    }, { x: 0, y: 0 });
+                    centroid.x /= points.length;
+                    centroid.y /= points.length;
+
+                    points.forEach((point, i) => {
+                        const nextPoint = points[(i + 1) % points.length];
+                        newStates.push({
+                            color: getRandomColor(),
+                            points: randomizePolygon([point, nextPoint, centroid])
+                        });
+                    });
+                });
+                states = newStates;
+                drawMap();
+            };
+
+            const refineMap = () => {
+                let iterations = 4;
+                while (iterations > 0) {
+                    subdivideState();
+                    iterations--;
+                }
+            };
+
+            drawMap();
+            refineMap();
+        });
+    </script>
+</body>
+</html>
