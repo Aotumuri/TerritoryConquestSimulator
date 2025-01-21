@@ -1451,11 +1451,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Special generation pattern
         if (type === 'whiteWithFourColors') {
             // Set most cells to white, with four specific colors for four cells
-            const colors = ['#0000FF', '#FF0000', '#00FF00', '#FFFF00'];
-            expansionMultipliers['#0000FF'] = 1;
-            expansionMultipliers['#FF0000'] = 1;
-            expansionMultipliers['#00FF00'] = 1;
-            expansionMultipliers['#FFFF00'] = 1; // 初期値を1に設定
+            const colors = ['#0000ff', '#ff0000', '#00ff00', '#ffff00'];
+            expansionMultipliers['#0000ff'] = 1;
+            expansionMultipliers['#ff0000'] = 1;
+            expansionMultipliers['#00ff00'] = 1;
+            expansionMultipliers['#ffff00'] = 1; // 初期値を1に設定
 
             cells.forEach(cell => cell.color = '#FFFFFF'); // All cells to white
 
@@ -1863,7 +1863,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
                     <br><span>${countryName} (${color}):<br> ${count} 領地</span>
                 `;
-            } else {
+            } else if(expansionMultipliers[color] == 0)
+            {
+                listItem.innerHTML = `
+                    <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
+                    <br><span>${countryName} (${color}): <br>${count} 領地</span><br>
+                    <span style="color:red;">なぜか国力を全て失っている。</span>
+                `;
+            } else 
+            {
                 listItem.innerHTML = `
                     <span class="color-box" style="background-color: ${color}; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin-right: 10px;"></span>
                     <br><span>${countryName} (${color}): <br>${count} 領地</span><br>
