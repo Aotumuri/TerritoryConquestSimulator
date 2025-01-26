@@ -91,7 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (useRandomNames) {
                 // 色がまだマップに存在しない場合は新しい名前を生成してマップに追加
                 if (!colorToNameMap[cell.color]) {
-                    colorToNameMap[cell.color] = generateRandomName();
+                    if(cell.color === "#FFFFFF")
+                    {
+                        colorToNameMap[cell.color] = "未開拓地"
+                    }
+                    else
+                    {
+                        colorToNameMap[cell.color] = generateRandomName();
+                    }
                 }
             } else {
                 // ランダム名を使用しない場合は色コードをそのまま名前として利用
@@ -358,6 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 地図を初期化する関数
     function initializeMap(numCells, elevation) {
+        autoMergeRunning = false;
+
         // グローバルセルデータを初期化
         cells = generateVoronoiCells(numCells, canvas.width, canvas.height);
 
@@ -375,7 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 首都や都市データをリセット
         capitals.clear();
+        console.log(cities);
         cities = [];
+        console.log(cities);
 
         window.cells = cells;
 
