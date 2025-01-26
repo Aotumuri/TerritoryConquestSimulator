@@ -266,6 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('useRandomNamesToggle').checked = true;
             document.getElementById('elevationbuffToggle').checked = true;
             document.getElementById('elevationbuffNumber').value = 0.7;
+            document.getElementById('elevationbuffToggle_2').checked = true;
+            document.getElementById('elevationbuffNumber_2').value = 0.9;
         } else {
             // 他のプリセットを設定
             const preset = presets[presetName];
