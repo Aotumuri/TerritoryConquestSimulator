@@ -687,9 +687,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('disableWaterCitiesToggle').checked = settings.disableWaterCitiesToggle;
         document.getElementById('oceanSlider').value = settings.oceanSlider;
         document.getElementById('useRandomNamesToggle').checked = settings.useRandomNames;
-        document.getElementById('elevationbuffNumber').values = settings.elevationbuffNumber;
+        document.getElementById('elevationbuffNumber').value = settings.elevationbuffNumber;
         document.getElementById('elevationbuffToggle').checked = settings.elevationbuffToggle;
-        document.getElementById('elevationbuffNumber_2').values = settings.elevationbuffNumber_2;
+        document.getElementById('elevationbuffNumber_2').value = settings.elevationbuffNumber_2;
         document.getElementById('elevationbuffToggle_2').checked = settings.elevationbuffToggle_2;
 
         expansionMultipliers = mapData.expansionMultipliers;
