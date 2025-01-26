@@ -1424,8 +1424,13 @@ document.addEventListener('DOMContentLoaded', () => {
         colorGroups.forEach((cellsOfColor, color) => {
             const existingCitiesInColor = cities.filter(city => city.color === color);
             const requiredCities = Math.floor(cellsOfColor.length / cityRequirement);
-
+            let num = 0;
             while (existingCitiesInColor.length < requiredCities) {
+                num += 1;
+                if(num >= 10)
+                {
+                    break;
+                }
                 const randomCell = cellsOfColor[Math.floor(Math.random() * cellsOfColor.length)];
 
                 const isFarEnough = cities.every(city => {
