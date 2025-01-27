@@ -287,23 +287,26 @@
             const parentItem = element.parentElement;
             parentItem.classList.toggle('expanded');
         }
- // JSONを取得してダウンロードする関数
- const fetchAndDownloadJSON = async (url, fileName) => {
+// JSONを取得してダウンロードする関数
+const fetchAndDownloadJSON = async (url, fileName) => {
     try {
-        console.log('Fetching JSON from URL:', url); // URLをログに出力
+        // URLからデータを取得
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTPエラー! ステータス: ${response.status}`);
         }
         const data = await response.json();
 
+        // JSONを文字列化してBlobを作成
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+        // ダウンロードリンクを作成
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.download = fileName;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        downloadLink.download = fileName; // ダウンロードファイル名
+        document.body.appendChild(downloadLink); // 一時的にリンクを追加
+        downloadLink.click(); // 自動的にクリック
+        document.body.removeChild(downloadLink); // 使用後にリンクを削除
 
         console.log(`JSONファイルがダウンロードされました: ${fileName}`);
     } catch (error) {
@@ -312,18 +315,26 @@
     }
 };
 
-        // すべてのリンクにイベントリスナーを追加
-        // document.querySelectorAll('.sub-item-link').forEach(link => {
-        //     link.addEventListener('click', function (event) {
-        //         event.preventDefault(); // 通常のリンク動作を無効化
+// 各リンクにクリックイベントを設定
+document.querySelectorAll('.sub-item-link').forEach(link => {
+    link.addEventListener('click', function (event) {
+        event.preventDefault(); // 通常のリンク動作を無効化
 
-        //         const jsonUrl = this.getAttribute('data-json-url'); // data-json-url 属性からURLを取得
-        //         const fileName = jsonUrl.split('/').pop(); // ファイル名を取得
+        // data-json-url 属性からURLを取得
+        const jsonUrl = this.getAttribute('data-json-url');
+        if (!jsonUrl) {
+            console.error('data-json-url 属性が見つかりませんでした');
+            return;
+        }
 
-        //         // JSONを取得してダウンロード
-        //         fetchAndDownloadJSON(jsonUrl, fileName);
-        //     });
-        // });
+        // ファイル名をURLから取得
+        const fileName = jsonUrl.split('/').pop();
+
+        // JSONを取得してダウンロード
+        fetchAndDownloadJSON(jsonUrl, fileName);
+    });
+});
+
     </script>
 
 </body>
