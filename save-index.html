@@ -239,38 +239,51 @@
     <div class="container">
         <h1>陣取り合戦シミュレータ</h1>
         <img src="TCS.webp" alt="TCSアイコン" class="large-icon"><br>
-        <b>なんとなく、領土が変わっていくところを見たい人。<br>勝手に色々変わっていくものが見たい人ようです。</b><br>
-        <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a>
+        <!-- <b>なんとなく、領土が変わっていくところを見たい人。<br>勝手に色々変わっていくものが見たい人ようです。</b><br>
+        <a href="https://github.com/Aotumuri/TerritoryConquestSimulator" target="_blank" class="discarded-link">バグを発見したらgithubのissuesにお願いします！</a> -->
         <!-- おすすめバージョン -->
-        <h3>おすすめのバージョン（最新版で安定！）</h3>
-        <a href="map-v1.3.5.7/index.html" target="_blank" class="super-link">1.3.5.7</a>
+        <h3>ゲームを遊ぶ</h3>
+        <a href="index.html" target="_blank" class="super-link">バージョン選択に戻る</a>
 
-        <h3>お好きなバージョンを選んでください。</h3>
+        <br>
+
+        <b>サイトをダウンロードしてlocalで開いている場合は<br>挙動がおかしくなる場合があります。</b><br>
+        <a href="https://github.com/Aotumuri/TerritoryConquestSimulator/tree/main/saves" target="_blank" class="discarded-link">その時はgithubのsavesからダウンロードしましょう。</a><br>
+
+        <h3>お好きなテンプレートを選んでください。</h3>
         <p>古いバージョンはバグを含んでる可能性があります。</p>
-        <p>バージョンの見方<br>青:リスト, 緑:リリースされたバージョン, <br>赤:バグのため消されたバージョン, オレンジ:開発中</p>
-
-
+        <p>バージョンの見方<br>青:リスト, 緑:リリースされたバージョン, <br>赤:バグのため消されたバージョン, オレンジ:開発中</p><br>
         <!-- バージョン選択リスト -->
         <ul class="version-list">
             <li class="version-item">
-                <a onclick="toggleSubMenu(this)" class="sub-menu-link">Version 1.1</a>
-                <ul class="sub-list">
-                    <li class="sub-item">
-                        <a onclick="toggleSubMenu(this)" class="sub-menu-link">1.1.2</a>
+                <li class="sub-item">
+                    <a onclick="toggleSubMenu(this)" class="sub-menu-link">日本</a>
                         <ul class="sub-list">
-                            <li class="sub-item"><a href="map-v1.1.2.3/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.3</a></li>
-                            <li class="sub-item"><a href="map-v1.1.2.2/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.2</a></li>
-                            <li class="sub-item"><a href="map-v1.1.2.1/index.html" target="_blank" class="sub-item-link normal-link">1.1.2.1</a></li>
-                            <li class="sub-item"><a href="map-v1.1.2/index.html" target="_blank" class="sub-item-link normal-link">1.1.2</a></li>
+                            <li class="sub-item">
+                                <a onclick="toggleSubMenu(this)" class="sub-menu-link">北海道</a>
+                                    <ul class="sub-list">
+                                    <li class="sub-item"><a class="sub-item-link development-link">まだない</a></li>
+                                    </ul>
+                                </li>
+
+                            <li class="sub-item">
+                            <a onclick="toggleSubMenu(this)" class="sub-menu-link">福島</a>
+                                <ul class="sub-list">
+                                <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/japan/TCS-Map-Template-Fukushima.json">福島</a></li>
+                                <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/japan/TCS-Map-Template-Fukushima_elevationToggle.json">福島標高あり</a></li>
+                                <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/japan/TCS-Map-Template-Fukushima_elevationToggle_river.json">福島標高あり川あり（おすすめ）</a></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
-                    <li class="sub-item"><a href="saves/TCS-Map-Template-Europe.json" target="_blank" class="sub-item-link normal-link" download>ヨーロッパ</a></li>
-                    <li class="sub-item">
-                        <a class="sub-item-link normal-link" data-json-url="saves/TCS-Map-Template-Europe.json">
-                            ヨーロッパ
-                        </a>
-                    </li>                             
-                </ul>
+                <li class="sub-item">
+                    <a onclick="toggleSubMenu(this)" class="sub-menu-link">ヨーロッパ</a>
+                    <ul class="sub-list">
+                        <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/TCS-Map-Template-Europe.json">ヨーロッパミニ</a></li>
+                        <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/TCS-Map-Template-Europe_All.json">ヨーロッパ標高なし</a></li>     
+                        <li class="sub-item"><a class="sub-item-link normal-link" data-json-url="saves/TCS-Map-Template-Europe_All_elevationToggle.json">ヨーロッパ標高あり（おすすめ！）</a></li>                  
+                    </ul>
+                </li>
             </li>
         </ul>
         <!-- <div class="announcements">
