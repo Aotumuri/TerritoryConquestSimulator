@@ -137,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // **前回の国名を表示したセルを保存**
 let previousLabelPositions = {};
-let previousFontSizes = {};
 
 // **国名を描画**
 function drawRegionNames(ctx, cells) {
@@ -171,26 +170,23 @@ function drawRegionNames(ctx, cells) {
         if (previousLabelPositions[color]) {
             bestCell = previousLabelPositions[color];
         } else {
-            // **2. 領土の中心に最も近いセルを選ぶ**
-            bestCell = findClosestToCenter(regionBounds[color], countryLabels[color]);
+            // **2. 3つの候補から最適なセルを選ぶ**
+            bestCell = selectBestLabelCell(regionBounds[color], countryLabels[color]);
         }
 
         if (!bestCell) return;
 
         // **3. フォントサイズを計算**
-        let fontSize = calculateOptimalFontSize(ctx, regionBounds[color], colorToNameMap[color]);
-
-        // **4. フォントサイズを調整（0.8倍 or -3px）**
-        fontSize = Math.max(fontSize * 0.8, fontSize - 3, 10); // 最小10px
+        let fontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color]);
 
         ctx.font = `${fontSize}px Arial`;
         ctx.fillStyle = "#000000"; // **常に黒で統一**
 
-        // **5. 国名を描画**
+        // **4. 国名を描画**
         let centroid = getCellCentroid(bestCell);
         ctx.fillText(colorToNameMap[color], centroid.x, centroid.y);
 
-        // **6. このセルをキャッシュ**
+        // **5. このセルをキャッシュ**
         previousLabelPositions[color] = bestCell;
     });
 }
@@ -221,36 +217,74 @@ function findRegionBounds(color, cells) {
     };
 }
 
-// **領土の中心に最も近いセルを選ぶ**
-function findClosestToCenter(regionBounds, cells) {
+// **3つの候補から最適なセルを選ぶ**
+function selectBestLabelCell(regionBounds, cells) {
     let centerX = regionBounds.centerX;
     let centerY = regionBounds.centerY;
 
-    return cells.reduce((closest, cell) => {
+    let candidates = [];
+
+    // **1. 一番大きなセル**
+    let largestCell = cells.reduce((largest, cell) => {
+        let area = calculateCellArea(cell);
+        return area > (largest ? calculateCellArea(largest) : 0) ? cell : largest;
+    }, null);
+    if (largestCell) candidates.push(largestCell);
+
+    // **2. 領土の中心に最も近いセル**
+    let closestToCenter = cells.reduce((closest, cell) => {
         let centroid = getCellCentroid(cell);
         if (!centroid) return closest;
 
         let distance = Math.hypot(centroid.x - centerX, centroid.y - centerY);
         return (!closest || distance < closest.distance) ? { cell, distance } : closest;
     }, null)?.cell;
+    if (closestToCenter) candidates.push(closestToCenter);
+
+    // **3. 最大の空間にあるセル（中央付近 & 広いエリア）**
+    let bestFitCell = cells.reduce((best, cell) => {
+        let area = calculateCellArea(cell);
+        let centroid = getCellCentroid(cell);
+        if (!centroid) return best;
+
+        let distance = Math.hypot(centroid.x - centerX, centroid.y - centerY);
+        let score = area / (distance + 1); // スコア計算
+
+        return (!best || score > best.score) ? { cell, score } : best;
+    }, null)?.cell;
+    if (bestFitCell) candidates.push(bestFitCell);
+
+    // **最も適切なセルを返す**
+    return candidates[0] || null;
 }
 
-// **領土サイズに基づいて最適なフォントサイズを決定**
-function calculateOptimalFontSize(ctx, regionBounds, regionName) {
-    let maxFontSize = Math.min(regionBounds.width / regionName.length, regionBounds.height / 2);
+// **フォントサイズをより正確に調整**
+function calculatePreciseFontSize(ctx, regionBounds, regionName) {
+    let maxFontSize = Math.min(regionBounds.width * 0.3 / regionName.length, regionBounds.height * 0.3);
     let fontSize = maxFontSize;
 
-    // **フォントサイズを調整**
+    // **文字が領土の幅を超えないように調整**
     ctx.font = `${fontSize}px Arial`;
     let textWidth = ctx.measureText(regionName).width;
 
-    while (textWidth > regionBounds.width * 0.9 && fontSize > 10) {
-        fontSize -= 1;
+    while (textWidth > regionBounds.width * 0.8 && fontSize > 10) {
+        fontSize -= 2; // 2px ずつ縮小
         ctx.font = `${fontSize}px Arial`;
         textWidth = ctx.measureText(regionName).width;
     }
 
     return Math.max(fontSize, 10); // **最小サイズは10px**
+}
+
+// **セルの面積を計算**
+function calculateCellArea(cell) {
+    let area = 0;
+    const points = cell.points;
+    for (let i = 0; i < points.length; i++) {
+        let j = (i + 1) % points.length;
+        area += (points[i][0] * points[j][1]) - (points[j][0] * points[i][1]);
+    }
+    return Math.abs(area / 2);
 }
 
 // **セルの中心座標を取得**
