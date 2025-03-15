@@ -245,20 +245,25 @@ function selectBestLabelCell(regionBounds, cells) {
     let bestCell = null;
     let maxFontSize = 0;
 
-    cells.forEach(cell => {
+    // **すべてのセルをしっかりループ**
+    for (let i = 0; i < cells.length; i++) {
+        let cell = cells[i];
+
+        // **このセルでフォントサイズを計算**
         let fontSize = calculatePreciseFontSize(ctx, regionBounds, colorToNameMap[cell.color], cell);
+
+        // **最大のフォントサイズが取れるセルを更新**
         if (fontSize > maxFontSize) {
             maxFontSize = fontSize;
             bestCell = cell;
         }
-    });
+    }
 
     return bestCell;
 }
-
 // **フォントサイズを適切に計算する関数**
 function calculatePreciseFontSize(ctx, regionBounds, regionName, cell) {
-    let maxFontSize = Math.min(regionBounds.width * 0.2 / regionName.length, regionBounds.height * 0.3);
+    let maxFontSize = Math.min(regionBounds.width * 0.5 / regionName.length, regionBounds.height * 0.5);
     let fontSize = maxFontSize;
 
     ctx.font = `${fontSize}px Arial`;
