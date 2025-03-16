@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modifyElevationModeButton = document.getElementById('modifyElevationModeButton');
     const applyCountryNameButton = document.getElementById('applyCountryNameButton');
     const countryNameInput = document.getElementById('countryNameInput');
+    const selectedCountryName = document.getElementById('selectedCountryName');
 
     let isWaterModeActive = false;
 
@@ -2283,6 +2284,7 @@ function calculateCellArea(cell) {
         }
 
         colorToNameMap[selectedColor] = newCountryName;
+        selectedCountryName.textContent = newCountryName; // 表示を更新
         drawCells(); // 地図を再描画して変更を反映
     });
 
@@ -2344,6 +2346,7 @@ function calculateCellArea(cell) {
             if (colorPicker) {
                 colorPicker.value = rgbToHex(selectedCell.color); // RGBを16進数に変換して設定
             }
+            selectedCountryName.textContent = colorToNameMap[rgbToHex(selectedCell.color)] || "不明な国"
             // セルを強調表示
             // highlightCell(selectedCell, ctx);
         } else {
