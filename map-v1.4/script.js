@@ -76,11 +76,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ランダム名生成関数
     function generateRandomName() {
-        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
         const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-        return `${prefix}${suffix}`;
+    
+        if (suffix === "二重帝国") {
+            if (prefixes.length >= 2) {
+                const prefixA = prefixes[Math.floor(Math.random() * prefixes.length)];
+                let prefixB;
+                do {
+                    prefixB = prefixes[Math.floor(Math.random() * prefixes.length)];
+                } while (prefixA === prefixB); // **同じものを選ばないようにする**
+    
+                return `${prefixA}=${prefixB}${suffix}`;
+            } else {
+                // **prefix が 1 つしかない場合はそのまま結合**
+                return `${prefixes[0]}${suffix}`;
+            }
+        } else {
+            // **通常の処理**
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            return `${prefix}${suffix}`;
+        }
     }
-
     // 色コードに対応する名前マップを生成
     let colorToNameMap = {}; // 色コード → 国名のマッピング
 
