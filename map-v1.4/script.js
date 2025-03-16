@@ -178,10 +178,23 @@ function drawRegionNames(ctx, cells) {
 
         // **確率に応じてフォントサイズを再計算**
         if ((colorUpdateCounters[color] % 500 === 0 || Math.random() < updateProbability) || !bestCell) {
-            bestCell = selectBestLabelCell(regionBounds[color], countryLabels[color]);
-            let maxFontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell, cells);
+            // **新しい最適セルを取得**
+            let newBestCell = selectBestLabelCell(regionBounds[color], countryLabels[color]);
+            let newFontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], newBestCell, cells);
 
-            previousLabelPositions[color] = { cell: bestCell, initialFontSize: maxFontSize };
+            // **フォントサイズの比較**
+            if (previousLabelPositions[color]) {
+                let prevFontSize = previousLabelPositions[color].initialFontSize;
+                
+                if (newFontSize < prevFontSize || newFontSize < prevFontSize * 0.8) {
+                    // **前回のセルを継承し、そのセルで再計算**
+                    newBestCell = previousLabelPositions[color].cell;
+                    newFontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], newBestCell, cells);
+                }
+            }
+
+            // **更新**
+            previousLabelPositions[color] = { cell: newBestCell, initialFontSize: newFontSize };
         } else {
             // 1回前のフォントサイズを継承
             let fontSize = initialFontSize;
