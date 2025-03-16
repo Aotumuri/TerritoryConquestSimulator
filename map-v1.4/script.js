@@ -138,19 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // **国名を描画**
 let previousLabelPositions = {};  // { color: { cell, initialFontSize } }
 let updateCounter = 0;  // 更新回数カウンター
-let needsFullUpdate = false;
+let colorUpdateCounters = {}; // 色ごとの更新カウンター
+const K = 50;  // 反比例のバランス調整定数
 
 function drawRegionNames(ctx, cells) {
     if (!document.getElementById('showCountryNamesToggle').checked) return;
-
-    let random4UC = 0;
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     let countryLabels = {};
     let regionBounds = {};
-
 
     // **国ごとのセルを収集**
     cells.forEach(cell => {
@@ -168,48 +166,48 @@ function drawRegionNames(ctx, cells) {
     });
 
     Object.keys(countryLabels).forEach(color => {
+        if (!(color in colorUpdateCounters)) {
+            colorUpdateCounters[color] = Math.floor(Math.random() * 100); // 初期値をランダム化
+        }
+
+        let numCells = countryLabels[color].length;
+        let updateProbability = K / (numCells + K);  // 反比例する確率
+
         let bestCell = previousLabelPositions[color]?.cell || null;
         let initialFontSize = previousLabelPositions[color]?.initialFontSize || null;
 
-        // **100〜1000回に1回はすべてのセルをチェックして最適化**
-        if (updateCounter % (100 + random4UC) === 0) {
-            needsFullUpdate = true;
-            random4UC = Math.floor(Math.random() * 900);
-        }
-
-        if (needsFullUpdate || !bestCell) {
+        // **確率に応じてフォントサイズを再計算**
+        if ((colorUpdateCounters[color] % 500 === 0 || Math.random() < updateProbability) || !bestCell) {
             bestCell = selectBestLabelCell(regionBounds[color], countryLabels[color]);
-            let maxFontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell);
+            let maxFontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell, cells);
 
             previousLabelPositions[color] = { cell: bestCell, initialFontSize: maxFontSize };
         } else {
-            let fontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell);
+            // 1回前のフォントサイズを継承
+            let fontSize = initialFontSize;
 
+            // フォントサイズが前回の50%以下なら再計算
             if (fontSize < initialFontSize * 0.5) {
-                needsFullUpdate = true;
                 bestCell = selectBestLabelCell(regionBounds[color], countryLabels[color]);
+                fontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell, cells);
+                previousLabelPositions[color] = { cell: bestCell, initialFontSize: fontSize };
             }
         }
 
         if (!bestCell) return;
 
-        let fontSize = calculatePreciseFontSize(ctx, regionBounds[color], colorToNameMap[color], bestCell);
+        let fontSize = previousLabelPositions[color].initialFontSize;
         ctx.font = `${fontSize}px Arial`;
         ctx.fillStyle = "#000000";
 
         let centroid = getCellCentroid(bestCell);
         ctx.fillText(colorToNameMap[color], centroid.x, centroid.y);
 
-        previousLabelPositions[color] = { cell: bestCell, initialFontSize: fontSize };
+        colorUpdateCounters[color]++; // 色ごとのカウンターを更新
     });
 
-    if(needsFullUpdate)
-    {
-        needsFullUpdate = false;
-    }
     updateCounter++;
 }
-
 // **国の領土範囲を取得**
 function findRegionBounds(color, cells) {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -247,10 +245,11 @@ function selectBestLabelCell(regionBounds, cells) {
 
     // **すべてのセルをしっかりループ**
     for (let i = 0; i < cells.length; i++) {
+        if(Math.random() >= (1/(cells.length)*1.5) && bestCell !== null) continue;
         let cell = cells[i];
 
         // **このセルでフォントサイズを計算**
-        let fontSize = calculatePreciseFontSize(ctx, regionBounds, colorToNameMap[cell.color], cell);
+        let fontSize = calculatePreciseFontSize(ctx, regionBounds, colorToNameMap[cell.color], cell, cells);
 
         // **最大のフォントサイズが取れるセルを更新**
         if (fontSize > maxFontSize) {
@@ -261,21 +260,58 @@ function selectBestLabelCell(regionBounds, cells) {
 
     return bestCell;
 }
-// **フォントサイズを適切に計算する関数**
-function calculatePreciseFontSize(ctx, regionBounds, regionName, cell) {
+
+function calculatePreciseFontSize(ctx, regionBounds, regionName, cell, cells) {
     let maxFontSize = Math.min(regionBounds.width * 0.5 / regionName.length, regionBounds.height * 0.5);
     let fontSize = maxFontSize;
 
     ctx.font = `${fontSize}px Arial`;
     let textWidth = ctx.measureText(regionName).width;
+    let textHeight = fontSize; // 仮の高さ
 
-    while (textWidth > regionBounds.width * 0.8 && fontSize > 10) {
-        fontSize -= 2;
+    while ((textWidth > regionBounds.width * 0.8 || !isFontColorConsistent(cell, textWidth, textHeight, cells)) && fontSize > 10) {
+        fontSize /= 1.2;
         ctx.font = `${fontSize}px Arial`;
         textWidth = ctx.measureText(regionName).width;
+        textHeight = fontSize; // 仮の高さ更新
     }
 
     return Math.max(fontSize, 10);
+}
+
+// フォントの上下左右のセルの色がすべて一致しているか判定する関数
+function isFontColorConsistent(cell, textWidth, textHeight, cells) {
+    const regionColor = cell.color;
+
+    // 文字の範囲の4隅を計算
+    const topLeft = { x: cell.points[0][0] - textWidth / 2, y: cell.points[0][1] - textHeight / 2 };
+    const topRight = { x: cell.points[0][0] + textWidth / 2, y: cell.points[0][1] - textHeight / 2 };
+    const bottomLeft = { x: cell.points[0][0] - textWidth / 2, y: cell.points[0][1] + textHeight / 2 };
+    const bottomRight = { x: cell.points[0][0] + textWidth / 2, y: cell.points[0][1] + textHeight / 2 };
+
+    return [topLeft, topRight, bottomLeft, bottomRight].every(point => {
+        const surroundingCell = findCellAtPoint(point, cells);
+        return surroundingCell && surroundingCell.color === regionColor;
+    });
+}
+
+// 指定座標のセルを検索する関数
+function findCellAtPoint(point, cells) {
+    return cells.find(cell => isPointInsidePolygon(point.x, point.y, cell.points));
+}
+
+// 点がポリゴン内部にあるか判定する関数（点がセルの領域に含まれるかチェック）
+function isPointInsidePolygon(x, y, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+            (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
 }
 
 // **セルの中心座標を取得**
