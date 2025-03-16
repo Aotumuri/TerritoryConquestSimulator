@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const uniformElevationButton = document.getElementById('uniformElevationButton');
     const modifyElevationSlider = document.getElementById('modifyElevationSlider');
     const modifyElevationModeButton = document.getElementById('modifyElevationModeButton');
+    const applyCountryNameButton = document.getElementById('applyCountryNameButton');
+    const countryNameInput = document.getElementById('countryNameInput');
 
     let isWaterModeActive = false;
 
@@ -2264,6 +2266,24 @@ function calculateCellArea(cell) {
 
         expansionMultipliers[color] = multiplier; // 倍率を更新
         alert(`色 ${color} の倍率を ${multiplier} に設定しました。`);
+    });
+
+    applyCountryNameButton.addEventListener('click', () => {
+        const newCountryName = countryNameInput.value.trim();
+        const selectedColor = colorPicker.value;
+
+        if (newCountryName === "") {
+            alert("国名を入力してください！");
+            return;
+        }
+
+        if (!colorToNameMap[selectedColor]) {
+            alert("変更する国を選択してください！");
+            return;
+        }
+
+        colorToNameMap[selectedColor] = newCountryName;
+        drawCells(); // 地図を再描画して変更を反映
     });
 
     function generateNoiseMap(mapWidth, mapHeight, noiseWidth = 50, noiseHeight = 50, scale = 0.05) {
