@@ -737,6 +737,8 @@ function calculateCellArea(cell) {
         }
     });
 
+    // FIXME:首都が複数ある問題 
+
     function setNationColorInRange(centerCell, range, newColor) {
         let rangeSquared;
         let affectedCapitals = [];
