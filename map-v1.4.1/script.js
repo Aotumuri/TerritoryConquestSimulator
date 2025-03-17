@@ -42,8 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyCountryNameButton = document.getElementById('applyCountryNameButton');
     const countryNameInput = document.getElementById('countryNameInput');
     const selectedCountryName = document.getElementById('selectedCountryName');
+    const nationColorPicker = document.getElementById('nationColorPicker');
+    const nationNameLabel = document.getElementById('nationNameLabel');
+    const nationNameInput = document.getElementById('nationNameInput');
+    const applyNationNameButton = document.getElementById('applyNationNameButton');
+    const toggleNationEditModeButton = document.getElementById('toggleNationEditMode');
+    const toggleNationNameEditModeButton = document.getElementById('toggleNationNameEditMode');
 
     let isWaterModeActive = false;
+    let isNationEditModeActive = false;
 
     // 名前リストの定義
     //自分用メモ https://ja.wikipedia.org/wiki/%E5%9C%B0%E5%90%8D%E6%8E%A5%E5%B0%BE%E8%BE%9E
@@ -620,6 +627,14 @@ function calculateCellArea(cell) {
         setMode("modifyElevation");
     });
 
+    toggleNationEditModeButton.addEventListener('click', () => {
+        setMode("nationEditMode");
+    });
+
+    toggleNationNameEditModeButton.addEventListener('click', () => {
+        setMode("nationNameEditMode");
+    })
+
     toggleNoneModeButton.addEventListener('click', () => {
         setMode("none");
     });
@@ -632,12 +647,14 @@ function calculateCellArea(cell) {
         toggleWaterModeButton.classList.toggle('active_edit', currentMode === "addWater");
         toggleRemoveWaterModeButton.classList.toggle('active_edit', currentMode === "removeWater");
         modifyElevationModeButton.classList.toggle('active_edit', currentMode === "modifyElevation");
+        toggleNationEditModeButton.classList.toggle('active_edit', currentMode === "nationEditMode");
+        toggleNationNameEditModeButton.classList.toggle('active_edit', currentMode === "nationNameEditMode");
 
         // キャンバスのカーソルを変更
         canvas.style.cursor = currentMode !== "none" ? "pointer" : "default";
 
         // モードに応じてキャンバスイベントを切り替え
-        if (currentMode === "addWater" || currentMode === "removeWater" || currentMode === "modifyElevation") {
+        if (currentMode === "addWater" || currentMode === "removeWater" || currentMode === "modifyElevation" || currentMode === "nationEditMode" || currentMode === "nationNameEditMode") {
             isCanvasStopped = true;
             enableCanvasInteraction(); // キャンバスイベントを有効化
         } else {
@@ -683,14 +700,14 @@ function calculateCellArea(cell) {
         const rect = canvas.getBoundingClientRect();
         const cssX = event.clientX - rect.left;
         const cssY = event.clientY - rect.top;
-
+    
         // キャンバスの描画座標系に変換
         const mapX = (cssX - origin.x) / scale;
         const mapY = (cssY - origin.y) / scale;
-
+    
         // 該当するセルを検索
         const clickedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
-
+    
         if (clickedCell) {
             const range = parseInt(waterRangeSlider.value); // スライダー値を取得
             if (currentMode === "addWater") {
@@ -699,9 +716,33 @@ function calculateCellArea(cell) {
                 removeWaterInRange(clickedCell, range); // 水を抜く
             } else if (currentMode === "modifyElevation") {
                 handleElevationChange(clickedCell, range); // 標高変更
+            } else if (currentMode === "nationEditMode") {
+                // **国家の色を変更**
+                setNationColorInRange(clickedCell, range, normalizeHexColor(nationColorPicker.value.toUpperCase()));
             }
             drawCells(); // 地図の再描画
         }
+    }    
+
+    function setNationColorInRange(centerCell, range, newColor) {
+        let rangeSquared;
+        if (range == 1) {
+            centerCell.color = newColor;
+        } else {
+            rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
+            cells.forEach(cell => {
+                const dx = cell.points[0][0] - centerCell.points[0][0];
+                const dy = cell.points[0][1] - centerCell.points[0][1];
+                if (dx * dx + dy * dy <= rangeSquared) {
+                    cell.color = newColor;
+                }
+            });
+        }
+    }
+
+    function normalizeHexColor(hex) {
+        if (!hex.startsWith("#")) return hex; // 既に小文字ならそのまま返す
+        return hex.toLowerCase();
     }
 
     // 範囲内のセルを水セルに設定
@@ -710,7 +751,6 @@ function calculateCellArea(cell) {
         if(range==1)
         {
             centerCell.isWater = true;
-
         }
         else
         {
@@ -770,7 +810,6 @@ function calculateCellArea(cell) {
             });
         }
     }
-
 
     // スライダー値の変更をリアルタイムで反映する
     modifyElevationSlider.addEventListener('input', () => {
@@ -2338,15 +2377,17 @@ function calculateCellArea(cell) {
 
         // 該当するセルを検索
         selectedCell = cells.find(cell => isPointInsidePolygon(mapX, mapY, cell.points));
-
         if (selectedCell) {
             console.log(`選択したセルの色: ${selectedCell.color}`);
             // カラーピッカーにセルの色を反映
             const colorPicker = document.getElementById('colorPicker');
-            if (colorPicker) {
-                colorPicker.value = rgbToHex(selectedCell.color); // RGBを16進数に変換して設定
-            }
+            const nationColorPicker = document.getElementById('nationColorPicker');
+            colorPicker.value = rgbToHex(selectedCell.color); // RGBを16進数に変換して設定
             selectedCountryName.textContent = colorToNameMap[rgbToHex(selectedCell.color)] || "不明な国"
+            if(toggleNationNameEditModeButton.classList.contains("active_edit")){ 
+                nationColorPicker.value = rgbToHex(selectedCell.color); // RGBを16進数に変換して設定
+                nationNameLabel.textContent = colorToNameMap[rgbToHex(selectedCell.color)] || "不明な国"
+            }
             // セルを強調表示
             // highlightCell(selectedCell, ctx);
         } else {
