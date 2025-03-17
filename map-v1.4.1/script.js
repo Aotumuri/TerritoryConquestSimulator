@@ -739,6 +739,12 @@ function calculateCellArea(cell) {
 
     function setNationColorInRange(centerCell, range, newColor) {
         let rangeSquared;
+    
+        // **倍率が設定されていない場合は 1 にする**
+        if (!(newColor in expansionMultipliers)) {
+            expansionMultipliers[newColor] = 1;
+        }
+    
         if (range == 1) {
             centerCell.color = newColor;
         } else {
