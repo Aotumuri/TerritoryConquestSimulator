@@ -724,6 +724,19 @@ function calculateCellArea(cell) {
         }
     }    
 
+    applyNationNameButton.addEventListener('click', () => {
+        const newName = nationNameInput.value.trim();
+        const selectedColor = normalizeHexColor(nationColorPicker.value);
+    
+        if (newName && selectedColor) {
+            colorToNameMap[selectedColor] = newName;
+            nationNameLabel.textContent = newName;
+            console.log(`国名を変更: ${selectedColor} → ${newName}`);
+        } else {
+            console.log("無効な入力です");
+        }
+    });
+
     function setNationColorInRange(centerCell, range, newColor) {
         let rangeSquared;
         if (range == 1) {
