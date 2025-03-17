@@ -739,6 +739,7 @@ function calculateCellArea(cell) {
 
     function setNationColorInRange(centerCell, range, newColor) {
         let rangeSquared;
+        let affectedCapitals = [];
     
         // **倍率が設定されていない場合は 1 にする**
         if (!(newColor in expansionMultipliers)) {
@@ -746,6 +747,10 @@ function calculateCellArea(cell) {
         }
     
         if (range == 1) {
+            // **首都だった場合、リストに追加**
+            if (capitals.has(centerCell)) {
+                affectedCapitals.push(centerCell);
+            }
             centerCell.color = newColor;
         } else {
             rangeSquared = range * range * 20; // 距離判定用（範囲の二乗）
@@ -753,9 +758,47 @@ function calculateCellArea(cell) {
                 const dx = cell.points[0][0] - centerCell.points[0][0];
                 const dy = cell.points[0][1] - centerCell.points[0][1];
                 if (dx * dx + dy * dy <= rangeSquared) {
+                    // **首都だった場合、リストに追加**
+                    if (capitals.has(cell)) {
+                        affectedCapitals.push(cell);
+                    }
                     cell.color = newColor;
                 }
             });
+        }
+    
+        // **首都を再チェック**
+        if (affectedCapitals.length > 0) {
+            checkAndFixCapitals(newColor);
+        }
+    }
+
+    function checkAndFixCapitals(nationColor) {
+        let capitalCells = [];
+    
+        // **現在の首都リストを取得**
+        for (let [cell, color] of capitals.entries()) {
+            if (color === nationColor) {
+                capitalCells.push(cell);
+            }
+        }
+    
+        // **複数の首都がある場合、ランダムに1つ残す**
+        if (capitalCells.length > 1) {
+            console.log(`${nationColor} の首都が複数あるため、再チェックします。`);
+    
+            // **ランダムに1つ選択**
+            const chosenCapital = capitalCells[Math.floor(Math.random() * capitalCells.length)];
+    
+            // **他の首都を削除**
+            capitalCells.forEach(cell => {
+                if (cell !== chosenCapital) {
+                    capitals.delete(cell);
+                    console.log(`${nationColor} の不要な首都を削除しました。`);
+                }
+            });
+    
+            console.log(`${nationColor} の首都は 1 つに統一されました。`);
         }
     }
 
