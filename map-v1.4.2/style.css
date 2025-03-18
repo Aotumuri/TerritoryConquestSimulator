@@ -1,0 +1,405 @@
+/* 基本スタイル */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* ページがスクロールしないようにする */
+}
+
+#container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+/* サイドバー */
+#sidebar {
+  width: 300px;
+  background-color: #f4f4f4;
+  padding: 20px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  flex-shrink: 0; /* サイドバーの幅を固定 */
+}
+
+#sidebar h2,
+#sidebar h3 {
+  margin-top: 0;
+}
+
+#sidebar button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  cursor: pointer;
+}
+
+/* キャンバスエリア */
+canvas {
+  flex-grow: 1; /* キャンバスが余ったスペースを埋める */
+  border: 1px solid black;
+  width: calc(100% - 300px); /* サイドバー分を引いた幅にする */
+  height: 100%;
+}
+/* バージョン表示のスタイル */
+#versionLabel {
+  position: fixed; /* 画面に固定 */
+  bottom: 20px; /* 画面下からの距離 */
+  right: 20px; /* 画面右からの距離 */
+  font-size: 0.85em; /* 文字サイズを少し小さく */
+  color: gray;
+  opacity: 0.8;
+  font-family: Arial, sans-serif;
+  pointer-events: none; /* クリックイベントを無視 */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    1
+  ); /* 白の半透明背景で重ならないように */
+  padding: 4px 8px; /* ラベル内に余白を追加 */
+  border-radius: 4px; /* 角を丸くして視覚的に整える */
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3); /* 影を付けて少し浮かせる */
+}
+#tabMenu {
+  display: flex;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 10px;
+  cursor: pointer;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  text-align: center;
+}
+
+.tabButton.active {
+  background-color: #ffffff;
+  font-weight: bold;
+  border-bottom: 1px solid #ffffff; /* 選択中のタブとコンテンツをつなげる */
+}
+
+.tabContent {
+  display: none;
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+.tabContent.active {
+  display: block;
+}
+#colorRanking,
+#mapLog {
+  margin-top: 20px;
+}
+
+#colorRanking ul,
+#logList {
+  list-style-type: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#colorRanking li,
+#logList li {
+  /* display: flex; */
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+#colorRanking .color-box {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  margin-right: 10px;
+  border: 1px solid #000;
+}
+.color-box {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  margin-right: 10px;
+  border: 1px solid #000;
+}
+#rankingList {
+  max-height: none; /* ランキングリストの高さ制限を解除 */
+  overflow: visible; /* スクロールを無効化 */
+  padding: 0;
+  list-style-type: none;
+}
+#homeIcon {
+  display: block;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#homeIcon img {
+  width: 50%; /* サイドバーとほぼ同じ幅 */
+  height: auto;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6); /* 影を追加 */
+}
+#specialGeneration {
+  margin-top: 20px;
+}
+
+#specialGenerateButton {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+}
+#expansionMultiplierControls {
+  margin-top: 20px;
+}
+#multiplierInput {
+  width: 60px;
+  margin-right: 10px;
+}
+#multiplierColorPicker {
+  width: 100%;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+}
+/* モーダル背景 */
+.modal {
+  display: none; /* 初期は非表示 */
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* 暗い背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* モーダルの中身 */
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* モーダル内のボタン */
+.modal-content button {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.modal-content button:hover {
+  background-color: #45a049;
+}
+
+/* 閉じるボタン */
+#closeModal {
+  background-color: #f44336;
+}
+
+#closeModal:hover {
+  background-color: #d32f2f;
+}
+/* タブメニューの2段構造 */
+#tabMenu {
+  display: flex;
+  flex-direction: column; /* 縦方向に並べる */
+  gap: 5px; /* 上下の間隔 */
+}
+
+.tabRow {
+  display: flex; /* 横並び */
+  gap: 5px; /* ボタン間の間隔 */
+}
+
+.tabButton {
+  flex: 1; /* ボタンの幅を均等にする */
+  padding: 10px;
+  cursor: pointer;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+.tabButton.active {
+  background-color: #ffffff;
+  font-weight: bold;
+  border-bottom: none; /* 選択中のタブのスタイル */
+}
+
+.tabContent {
+  display: none;
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+.tabContent.active {
+  display: block;
+}
+/* 地図作成タブ内のスタイル調整 */
+#initializeMapButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  border-radius: 5px;
+}
+
+#initializeMapButton:hover {
+  background-color: #45a049;
+}
+
+#initialNumCells,
+#initialElevation {
+  width: 80px;
+  margin-right: 10px;
+}
+/* 無効化されたボタンのスタイル */
+button.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+#waterRangeContainer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#waterRange {
+  flex-grow: 1;
+}
+button.active_edit {
+  background-color: #4caf50; /* アクティブ時の色 */
+  color: white;
+  font-weight: bold;
+}
+
+#uniformElevationContainer {
+  margin-top: 20px;
+}
+
+#uniformElevationContainer label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+#elevationSlider {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#uniformElevationButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  border-radius: 5px;
+}
+
+#uniformElevationButton:hover {
+  background-color: #45a049;
+}
+
+#modifyElevationContainer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+}
+
+#modifyElevationContainer label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+#modifyElevationSlider {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#modifyElevationButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  border-radius: 5px;
+}
+
+#modifyElevationButton:hover {
+  background-color: #1976d2;
+}
+
+h3 {
+  font-size: 1.4em; /* 元のサイズの1.25倍に設定 */
+}
+/* li要素を四角で囲むスタイル */
+#logList li {
+  border: 1px solid #000; /* 黒い線で枠を作成 */
+  border-radius: 4px; /* 角を少し丸くする */
+  padding: 8px; /* 内側の余白を追加 */
+  margin-bottom: 5px; /* li要素同士の間隔 */
+  background-color: #f9f9f9; /* 背景色を設定 */
+}
+.log-entry {
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 5px;
+  background-color: #f9f9f9;
+}
+#countryNameInput {
+  width: 80%;
+  padding: 5px;
+  margin: 5px 0;
+}
+#nationColorPicker {
+  width: 100%;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#nationNameInput {
+  width: 80%;
+  padding: 5px;
+  margin: 5px 0;
+}
