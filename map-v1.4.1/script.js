@@ -735,8 +735,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // FIXME:首都が複数ある問題 
-
     function setNationColorInRange(centerCell, range, newColor) {
         let rangeSquared;
         let affectedCapitals = [];
@@ -1129,6 +1127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             autoMergeLoop(tickInterval);
         });
     }
+
     // // 地図を生成し描画する関数
     // function generateAndDrawMap(numCells, mergeIterations) {
     //     capitals.clear();
@@ -1439,6 +1438,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        fixCapitalColors(capitalIsEnabled); // 首都を修正。
+
         // 首都が存在しない領地を白色化
         if (capitalIsEnabled) {
             cells.forEach(cell => {
@@ -1448,6 +1449,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
+
+    function fixCapitalColors(capitalIsEnabled) {
+        capitals.forEach((correctColor, cell) => {
+            const conqueredColor = cell.color; // **征服した色（間違った色）**
+    
+            if (conqueredColor !== correctColor) {    
+                capitals.delete(cell); // **旧首都を削除**
+                addMapLog(correctColor, "の首都を奪いました", conqueredColor);
+    
+                // **新しい首都を設定する条件チェック**
+                const sameColorCells = cells.filter(c => c.color === correctColor);
+                const remainingCities = sameColorCells.filter(c => cities.includes(c));
+    
+                if (remainingCities.length > 0 && capitalIsEnabled) {
+                    // **他の都市に首都を移転**
+                    const newCapitalCell = remainingCities[0];
+                    capitals.set(newCapitalCell, correctColor); // 新しい都市に首都を設定
+                    addMapLog(correctColor, "は他の都市に首都を移転しました。");
+                } else {
+                    // **都市が無ければ国は滅亡**
+                    addMapLog(correctColor, "は滅亡しました。");
+                }
+            }
+        });
+    }
+
     // selectColorByPattern：neighborColors, pattern, selfColorだけで動作するように変更
     function selectColorByPattern(neighborColors, pattern, selfColor, selfIndex) {
         if (!neighborColors.length) return null;
